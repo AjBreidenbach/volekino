@@ -1,0 +1,16 @@
+{
+  "name": "volekino",
+  "version": "0.1.0",
+  "description": "",
+  "main": "\"\"",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pug": "^3.0.2",
+    "sass": "^1.38.1",
+    "terser": "^5.7.2"
+  }
+}

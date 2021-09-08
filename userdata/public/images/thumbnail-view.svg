@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="emoji"
+   version="1.1"
+   viewBox="0 0 72 72"
+   sodipodi:docname="thumbnail-view.svg"
+   inkscape:version="1.1 (1:1.1+202105261517+ce6663b3b7)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs23" />
+  <sodipodi:namedview
+     id="namedview21"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     inkscape:zoom="8.8611111"
+     inkscape:cx="35.943574"
+     inkscape:cy="36"
+     inkscape:window-width="1920"
+     inkscape:window-height="1055"
+     inkscape:window-x="0"
+     inkscape:window-y="1"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="color" />
+  <g
+     id="color">
+    <path
+       d="m 11,9.96 a 1.06,1.06 0 0 0 -1.06,1.06 v 49.9 A 1.06,1.06 0 0 0 11,61.98 h 49.9 a 1.06,1.06 0 0 0 1.06,-1.06 V 11.02 A 1.06,1.06 0 0 0 60.9,9.96 Z"
+       fill="#d0cfce"
+       id="path2"
+       style="fill:#9b9b9a;fill-opacity:1" />
+    <g
+       fill="#9b9b9a"
+       stroke="#000000"
+       stroke-miterlimit="10"
+       id="g12"
+       style="fill:#d0cfce;fill-opacity:1">
+      <rect
+         x="14.462156"
+         y="14.562156"
+         width="18.875687"
+         height="17.475687"
+         id="rect4"
+         style="stroke-width:0.924312;fill:#d0cfce;fill-opacity:1" />
+      <rect
+         x="37.963413"
+         y="14.563412"
+         width="18.873175"
+         height="17.573175"
+         id="rect6"
+         style="stroke-width:0.926825;fill:#d0cfce;fill-opacity:1" />
+      <rect
+         x="14.463412"
+         y="37.963413"
+         width="18.872999"
+         height="17.573175"
+         id="rect8"
+         style="stroke-width:0.927;stroke-miterlimit:10;stroke-dasharray:none;fill:#d0cfce;fill-opacity:1" />
+      <rect
+         x="37.963413"
+         y="37.963413"
+         width="18.873175"
+         height="17.573175"
+         id="rect10"
+         style="stroke-width:0.926825;fill:#d0cfce;fill-opacity:1" />
+    </g>
+  </g>
+  <g
+     id="line"
+     fill="none"
+     stroke="#000"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     stroke-width="2">
+    <line
+       x1="61"
+       x2="11"
+       y1="61"
+       y2="61"
+       id="line15" />
+    <polyline
+       points="11 57.2 11 11 61 11 61 57.2"
+       id="polyline17" />
+  </g>
+</svg>

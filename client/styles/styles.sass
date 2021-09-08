@@ -1,0 +1,286 @@
+$background_secondary: #414141
+$background_primary: #ffffff
+
+body
+  margin: 0px
+  background-color: $background_secondary
+
+h1
+  color: blue
+
+video
+  max-width: 100%
+
+main
+  width: 100%
+  position: relative
+  //width: calc(100% - 5em)
+  display: inline-flex
+  flex-direction: column
+  overflow: auto
+
+
+#mount
+  height: 100%
+  display: flex
+  overflow: hidden
+  justify-content: space-between
+
+nav
+  width: 4em
+  display: inline-flex
+  flex-direction: column
+  align-self: center
+  align-items: flex-end
+
+
+nav img
+  width: 3em
+  padding: 0.5em
+  height: auto
+
+
+img.thumbnail-large
+  width: 100%
+  height: 100%
+  box-sizing: border-box
+  object-fit: cover
+  filter: drop-shadow(2px 4px 6px grey)
+  top: 0
+  left: 0
+  position: absolute
+  
+
+img.thumbnail-tiny
+  width: 3em
+  height: 2em
+
+div.entry-info
+  //font-size: 0.8em
+  padding: 0.75em
+  box-sizing: border-box
+  max-width: 100%
+  text-overflow: ellipsis
+  white-space: nowrap
+  overflow: hidden
+  padding-top: 2em
+
+
+div.entry
+  width: 270px
+  margin: 0.5em
+  overflow: hidden
+  box-shadow: 2px 4px 6px #b3b3b3
+
+
+div.entry-list
+  //padding-top: 1em
+  display: flex
+  flex-wrap: wrap
+  //justify-content: space-evenly
+  overflow: auto
+  background-color: $background_primary
+
+
+div.entry-list table
+  position: relative
+  //table-layout: fixed
+  //width: 100%
+  
+div.entry-list tbody
+  font-size: 0.8em
+
+
+div.entry-list::-webkit-scrollbar
+  width: 5px
+  height: 5px
+
+div.entry-list::-webkit-scrollbar-thumb
+  background: #B3AFB3
+  border-radius: 0px
+
+div.entry-list::-webkit-scrollbar-thumb:hover
+  background: #B3AFB3
+
+div.entry-list::-webkit-scrollbar-track
+  background: #F0F0F0
+  border-radius: 0px
+  box-shadow: inset 0px 0px 0px 0px #F0F0F0
+
+
+.flex-cell
+  display: flex
+  align-items: center
+  max-width: 400px
+  padding: 0 1.5em 0 1.5em
+  overflow: hidden
+
+.flex-cell > *
+  padding: 0.25em 1em 0.25em 1em
+
+
+thead
+  position: sticky
+  top:0
+  background-color: white
+
+.hidden
+  display: none !important
+
+
+div.directory-top
+  width: 100%
+  justify-content: center
+  display: flex
+  padding: 0.5em
+
+
+div.search-container
+  font-size: 0.8em
+  position: relative
+
+input[type="search"] 
+  padding: 0.5em
+  font-size: 1.25em
+  padding-left: 2em
+  border-radius: 1em
+  outline-width: 0
+
+
+img[src="/images/search.svg"]
+  top: 0.5em
+  width: 2.5em
+  position: absolute
+
+img[src="/images/open-folder.svg"]
+  width: 2em
+  padding: 0.25em
+
+div.library-container
+  overflow: hidden
+  display: flex
+  flex-direction: column
+
+div.directory-path
+  text-overflow: ellipsis
+  max-width: 100%
+  white-space: nowrap
+  overflow: hidden
+
+
+div.entry-thumbnail-container
+  position: relative
+  width: 100%
+  padding: 33%
+  box-sizing: border-box
+
+
+div.entry-thumbnail-container > .title
+  color: white
+  padding: 0.5em
+  white-space: normal
+  display: flex
+  box-sizing: border-box
+  max-width: 100%
+  word-break: break-word
+  filter: drop-shadow(2px 4px 6px black)
+  background-color: #0004
+  font-weight: 500
+  font-size: 0.9em
+  position: absolute
+  top:0
+  left:0
+  z-index: 1 
+
+
+.nodecorate
+  text-decoration: none
+
+.table-view-context-menu
+    display: flex
+    position: sticky
+    left: 0
+    width: 300px
+
+
+label > *
+  margin: 0.5em
+
+label
+  margin: 0 0.5em 0 0.5em
+
+button
+  display: inline-flex
+  padding: 0.5em
+  outline-width: 0
+  border-width: 0
+  align-items: center
+  justify-content: space-around
+
+button:active
+  border-style: inset
+  border-width: 2px
+  padding: calc(0.5em - 2px)
+
+button:active .spin
+  transform: rotate(1turn)
+  transition: transform 0.25s 
+
+button:hover .spin
+  transition: transform 0.25s 
+
+
+progress
+  -webkit-appearance: none
+
+::-webkit-progress-value, ::-moz-progress-bar
+  transition: width 1s
+  background-color: #0075ff
+
+div.progress-bar-container
+  border-radius: 5em
+  overflow: hidden
+  height: 1em
+  position: relative
+  width: 300px
+
+div.progress-bar-inner
+  box-sizing: border-box
+  background-color: #efefef
+  border-width: 1px
+  border-style: solid
+  border-color: #c2c2c2
+  border-radius: 5em
+  height: 100%
+
+div.progress-bar-value
+  transition: width 2s
+  background-color: #0075ff
+  height: 100%
+  position: absolute
+  left: 0
+  top: 0
+
+::-webkit-progress-bar
+  background-color: #efefef
+  border-width: 1px
+  border-style: solid
+  border-color: #c2c2c2
+  border-radius: 5em
+  overflow: hidden
+  /* height: 1.5em; */
+
+
+@media only screen and (max-width: 600px)
+  #mount
+    flex-direction: column
+
+  div.entry
+    width: min(100%, 392px)
+  
+  nav
+    flex-direction: row
+    width: unset
+    height: 4em
+
+    

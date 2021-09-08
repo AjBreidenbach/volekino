@@ -1,0 +1,9 @@
+.sass-cache/
+dist/
+node_modules/
+*.out
+src/**
+
+!src/**/*.nim
+!src/**/*.sql
+!src/**/

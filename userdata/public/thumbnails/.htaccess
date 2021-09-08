@@ -1,0 +1,3 @@
+<FilesMatch "\d+">
+  Header set Content-Type "image/jpeg"
+</FilesMatch>
