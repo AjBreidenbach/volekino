@@ -16,13 +16,11 @@ const SQL_STATEMENTS = statementsFrom("./statements/subtitles.sql")
 
 type SubtitlesDb* = distinct DbConn
 
-#const HTACCESS =  slurp("../subtitles.htaccess")
 var subtitlesDir = ""
 proc createSubtitlesDirIfNeeded =
   if not subtitleDirCreated:
     subtitlesDir = publicDir / "subtitles"
     #createDir subtitlesDir
-    #writeFile(subtitlesDir / ".htaccess", HTACCESS)
     subtitleDirCreated = true
 
 

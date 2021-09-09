@@ -83,11 +83,19 @@ proc getEntryUid*(library: LibraryDb, mediaSource: string): string =
  
 proc removeEntry*(library: LibraryDb, uid: string) =
   let db = DbConn(library)
-  let path = library.getEntry(uid).path
-  removeFile(mediaDir / path)
+  removeFile(libraryDir / uid)
+  try:
+    let path = library.getEntry(uid).path
+    removeFile(mediaDir / path)
+  except: discard
   db.exec(sql SQL_STATEMENTS["remove"], uid)
 
 
+proc removeOrphanEntries*(library: LibraryDb) =
+  for (kind, path) in walkDir(libraryDir):
+    if kind == pcLinkToFile and not fileExists(expandSymlink(path)):
+      library.removeEntry(path.splitFile()[1])
+  
 
 proc getAll*(library: LibraryDb): seq[LibraryEntry] =
   let db = DbConn(library)

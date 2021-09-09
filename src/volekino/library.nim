@@ -41,6 +41,7 @@ proc syncMedia*(conf: VoleKinoConfig) =
     #createDir mediaDir
     mediaDirCreated = true
 
+  removeOrphanEntries(libraryDb)
   removeOrphanThumbnails(libraryDb)
   removeOrphanSubtitles(subtitlesDb)
 

@@ -61,12 +61,10 @@ proc generateThumbnailImage(filename: string, destFile: string, time: int): int 
 var thumbnailsDir = ""
 
 
-#const HTACCESS = slurp("../thumbnails.htaccess")
 proc createThumbnailDirIfNeeded =
   if not thumbnailDirCreated:
     thumbnailsDir = publicDir / "thumbnails"
     #createDir(thumbnailsDir)
-    #writeFile(thumbnailsDir / ".htaccess", HTACCESS)
     thumbnailDirCreated = true
 
 
