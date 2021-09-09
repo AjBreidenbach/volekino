@@ -28,12 +28,15 @@ var selected: JsSet = newJsSet()
 var deleted: JsSet = newJsSet()
 
 proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPath: cstring): VNode =
+
+  let onSourcelessImage = eventHandler:
+    e.target.src = cstring"/images/film-frames.svg"
   mdiv(
     a {class: class},
     m(mrouteLink, a {href: pathToVideo, class: "nodecorate"},
     mdiv(
       a {class: "entry-thumbnail-container"},
-        mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource}),
+        mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource, onerror: onSourcelessImage}),
         mdiv(
           a {class: "title"},
           entry.pathTail,
@@ -72,6 +75,8 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
 
     #discard mrequest(cstring"/api/library/" & toJs(entry.id).to(cstring), cstring"delete")
 
+  let onSourcelessImage = eventHandler:
+    e.target.src = cstring"/images/film-frames.svg"
   
 
   mtr(
@@ -82,7 +87,7 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
     ),
     mtd(
       m(mrouteLink, a {href: pathToVideo, class: "flex-cell"},
-        mimg(a {class: "thumbnail-tiny", src: imageSource}),
+        mimg(a {class: "thumbnail-tiny", src: imageSource, onerror: onSourcelessImage}),
         entry.pathTail
       )
     ),
@@ -156,7 +161,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
 
     )
 
-  let entryListStyle = if shouldDisplayTable: "" else: "justify-content: space-evenly"
+  let entryListStyle = if shouldDisplayTable: "" else: "justify-content: space-between"
 
   let deleteSelected = eventHandler:
     for uid in selected:

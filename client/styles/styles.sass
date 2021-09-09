@@ -54,6 +54,7 @@ img.thumbnail-large
 img.thumbnail-tiny
   width: 3em
   height: 2em
+  object-fit: cover
 
 div.entry-info
   //font-size: 0.8em
@@ -65,22 +66,64 @@ div.entry-info
   overflow: hidden
   padding-top: 2em
 
-
 div.entry
   width: 270px
   margin: 0.5em
   overflow: hidden
   box-shadow: 2px 4px 6px #b3b3b3
 
+@media only screen and (max-width: 384px * 7)
+  div.entry
+    width: 15.5%
+  div.entry-list::after
+    width: 15.5%
+
+//@media only screen and (max-width: 384px * 6)
+  div.entry
+    width: 15%
+
+@media only screen and (max-width: 384px * 5)
+  div.entry
+    width: 18%
+  div.entry-list::after
+    width: 18%
+
+@media only screen and (max-width: 384px * 4)
+  div.entry
+    width: 23%
+  div.entry-list::after
+    width: 23%
+
+@media only screen and (max-width: 384px * 3)
+  div.entry
+    width: 31%
+  div.entry-list::after
+    width: 31%
+
+@media only screen and (max-width: 384px * 2)
+  div.entry
+    width: 45%
+  div.entry-list::after
+    width: 45%
+
+@media only screen and (max-width: 384px)
+  div.entry
+    width: 100%
+
+
+
 
 div.entry-list
   //padding-top: 1em
   display: flex
   flex-wrap: wrap
-  //justify-content: space-evenly
+  //justify-content: space-between
   overflow: auto
   background-color: $background_primary
 
+div.entry-list::after
+  content: ""
+  flex: auto
 
 div.entry-list table
   position: relative
@@ -275,7 +318,7 @@ div.progress-bar-value
   #mount
     flex-direction: column
 
-  div.entry
+  //div.entry
     width: min(100%, 392px)
   
   nav
