@@ -2,7 +2,7 @@
 import mithril
 #import asyncjs
 import mithril/common_selectors
-import client/[jsffi, entry, convert, progress]
+import client/[jsffi, entry, convert, progress, wsdispatcher]
 import common/library_types
 
 
@@ -87,12 +87,17 @@ proc newDirectory: Directory =
 type LibraryState = ref object
   entry: Entry
   subtitles: seq[SubtitleTrack]
+  videoElement: JsObject
+  uid: cstring
   ready: bool
+  listeners: seq[(cstring, JsObject)]
+  startingTime: float
 
 var Library = MComponent()
 
 Library.oninit = lifecycleHook:
   let uid = mrouteparam("path")
+  state.uid = uid
 
   var 
     entryPromise = mrequest("/api/library/" & uid)
@@ -112,8 +117,50 @@ Library.oninit = lifecycleHook:
       state.ready = true
     subtitlesFulfilled = true
     
+Library.oncreate = lifecycleHook(LibraryState):
+  state.listeners = @[
+    addEventListener(cstring"play", PlayEvent) do:
+      if detail.uid == state.uid:
+        state.videoElement.currentTime = detail.ts
+        state.videoElement.play()
+    ,
+    addEventListener(cstring"pause", PauseEvent) do:
+      if detail.uid == state.uid:
+        state.videoElement.currentTime = detail.ts
+        state.videoElement.pause()
+  ]
+  
+  let ts = localStorage[state.uid & cstring":duration"]
+  if not ts.isUndefined():
+    state.startingTime = parseFloat(ts)
+
+  #state.listeners.add play
+
+Library.onremove = lifecycleHook:
+  for listener in state.to(LibraryState).listeners:
+    removeEventListener(listener)
+
+Library.onupdate = lifecycleHook(LibraryState):
+  state.videoElement = vnode.dom.querySelector(cstring"video")
+  if state.startingTime != 0:
+    state.videoElement.currentTime = state.startingTime
+    state.startingTime = 0
+    
   
 Library.view = viewFn(LibraryState):
+  let onplay = eventHandler:
+    let ts = state.videoElement.currentTime.to(float)
+    sendEvent("play", PlayEvent(uid: state.uid, ts: ts))
+
+  let onpause = eventHandler:
+    let ts = state.videoElement.currentTime.to(float)
+    sendEvent("pause", PauseEvent(uid: state.uid, ts: ts))
+    
+  let ontimeupdate = eventHandler:
+    let ts = state.videoElement.currentTime.to(cstring)
+    localStorage[state.uid & cstring":duration"] = ts
+    
+    
   if not state.ready: return mtext("")
   var subtitleNodes = newSeq[VNode]()
   for track in state.subtitles:
@@ -123,7 +170,7 @@ Library.view = viewFn(LibraryState):
   mdiv(
     a {style: "margin: 0 auto"},
     mvideo(
-      a { controls: true },
+      a { controls: true , onplay: onplay, onpause: onpause, ontimeupdate: ontimeupdate},
       msource(
         a {
           src: (cstring"/library/" & mrouteparam("path")),
@@ -201,3 +248,5 @@ block:
     }
   )
 #
+
+

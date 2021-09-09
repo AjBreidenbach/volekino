@@ -5,6 +5,7 @@ import ../globals
 import os
 import strformat
 import osproc
+import ../ffprobe
 
 import db_library
 
@@ -31,7 +32,23 @@ proc addThumbnail*(thumbs: ThumbnailsDb, id: int, uid: string) =
   db.exec(sql SQL_STATEMENTS["add"], id)
 
 
-proc generateThumbnailImage(filename: string, destFile: string, ffmpegTimestamp="00:00:01"): int =
+proc toFfmpegTimestamp(t: int): string =
+  let seconds = t mod 60
+  let minutes = t div 60 mod 60
+  let hours = t div 3600 mod 3600
+
+  if hours < 10: result.add '0'
+  result.add $hours
+  result.add ':'
+  if minutes < 10: result.add '0'
+  result.add $minutes
+  result.add ':'
+  if seconds < 10: result.add '0'
+  result.add $seconds
+  
+
+proc generateThumbnailImage(filename: string, destFile: string, time: int): int =
+  let ffmpegTimestamp = toFfmpegTimestamp(time)
   let command = &"{ffmpeg} -y -ss {ffmpegTimestamp} -i {quoteShell(filename)} -vf scale=384:216:force_original_aspect_ratio=decrease -vframes 1 -f image2 {quoteShell(destFile)}"
   echo "command: ", command
   let ffmpegResult = execCmdEx(command)
@@ -58,12 +75,17 @@ proc createThumbnail*(mediaSource, uid: string) = #: string =
   
   #let uid = genUid()
   let dest = thumbnailsDir / uid
+  let duration = ffprobe(mediaSource).duration
+  let thumbnailTime = if duration < 720: # 12 minutes
+    duration div 3
+  else: 180 # 3 minutes
+
 
   let exitCode = generateThumbnailImage(
     mediaSource,
     dest,
     #TODO make this parameter relative to duration
-    ffmpegTimestamp="00:03:00"
+    thumbnailTime
   )
   
   assert exitCode == 0

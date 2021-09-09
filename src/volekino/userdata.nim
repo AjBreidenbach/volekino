@@ -1,6 +1,7 @@
 import zippy, zippy/ziparchives
 import globals
 import os
+import tables
 
 
 import streams
@@ -17,17 +18,21 @@ when isMainModule:
 
 else:
   proc populateFromZip*() =
+    createDir(tmpDir)
     let archive = ZipArchive()
     archive.open(outputStream)
+    for key in archive.contents.keys():
+      echo key
     try:
-      archive.extractAll(tmpDir)
+      archive.extractAll(tmpDir / "userdata")
     except:
+      echo "failed to extract"
       discard
-
+      
     try:
       createDir(USER_DATA_DIR / "..")
-      moveDir(tmpDir / "userdata", USER_DATA_DIR)
+      moveDir(tmpDir / "userdata" / "userdata", USER_DATA_DIR)
     except:
       discard
 
-
+    removeDir(tmpDir / "userdata")

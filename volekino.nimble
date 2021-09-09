@@ -30,6 +30,7 @@ task buildBackend, "build server code":
   exec "nim c -r userdata"
   if "-d:release" in commandLineParams():
     switch("define", "release")
+  switch("define", "usestd")
   setCommand("c", getPkgDir() / "src" / "volekino.nim")
 
 task buildAll, "":
@@ -43,8 +44,11 @@ task buildAll, "":
 requires "nim >= 1.4.8"
 requires "https://github.com/planety/prologue.git#05581bf"
 requires "https://github.com/MatthewScholefield/appdirs#3cbf5b4"
-requires "https://github.com/AjBreidenbach/nim-mithril#697b9f5"
+requires "https://github.com/AjBreidenbach/nim-mithril#69c98f2"
+#requires "mithril"
 requires "https://github.com/guzba/zippy#14739c9"
+requires "https://github.com/stisa/jswebsockets#ff0ceec"
+requires "websocketx >= 0.1.2"
 requires "cligen"
 
 

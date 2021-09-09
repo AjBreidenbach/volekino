@@ -25,11 +25,15 @@ proc setTimeout*(timeoutDuration: cint, timeoutFunction: TimeoutFunction | Async
   
 proc clearTimeout*(timeoutHandle: cint) {.importc.}
 
+var JSON* {.importc.} : JsObject
+proc parseFloat*(s: cstring): float {.importc.}
 
 converter toCstring*(s: cint | int): cstring = s.toJs.to(cstring)
 
 var document* {.importc.} : JsObject
+var location* {.importc.} : JsObject
 var console* {.importc.} : JsObject
+var localStorage* {.importc.}: JsAssoc[cstring, cstring]
 
 type JsSet* = ref object
   assoc: JsAssoc[cstring, bool]

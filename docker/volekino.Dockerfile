@@ -34,3 +34,4 @@ user volekino:volekino
 expose 7000/tcp
 run ./dist/volekino --api=false --sync=false --apache=false
 copy test-resources/ /home/volekino/.local/share/VoleKino/media
+cmd ["./dist/volekino"]

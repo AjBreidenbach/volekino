@@ -2,6 +2,7 @@ import volekino/globals
 import asyncdispatch, os, db_sqlite, strutils, json, re, osproc#, asyncfile
 from uri import nil
 import prologue except newSettings, newApp
+import prologue/websocket
 #import mimetypes
 import volekino/[userdata, models, config, library, ffmpeg]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles]
@@ -127,6 +128,35 @@ proc deleteMedia(ctx: Context) {.async, gcsafe.} =
       resp jsonResponse(%* {"error": "could not remove entry " & getCurrentExceptionMsg()}, Http500)
     
 
+var websocketConnections = newSeq[WebSocket]()
+
+proc broadcast(index: int, message: string): Future[void] =
+  var futures = newSeq[Future[void]]()
+  for (i, connection) in websocketConnections.pairs():
+    if i == index or connection.isNil: continue
+    futures.add connection.send(message)
+
+
+  all(futures)
+
+proc connectWebSocket(ctx: Context) {.async, gcsafe.} =
+  #await sleepAsync 200
+  let ws = await newWebSocket(ctx)
+  await ws.send($ websocketConnections.len)
+  let index = websocketConnections.len
+  #if not ws.isNil: websocketConnections.add ws
+  websocketConnections.add ws
+  while ws.readyState == Open:
+    try:
+      let packet = await ws.receiveStrPacket()
+      await index.broadcast(packet)
+    except: break
+
+  websocketConnections[websocketConnections.find(ws)] = nil
+  #echo "connections: ", websocketConnections.len
+
+  resp "OK"
+
 proc initDb() =
   let db = open(globals.dbPath, "", "", "")
   createTables(db)
@@ -159,7 +189,17 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
 
   #when(defined(release)):
   if not fileExists(staticDir / "index.html"):
-    writeFile(staticDir / "index.html", INDEX_HTML)
+    createDir(staticDir)
+    when defined(release):
+      writeFile(staticDir / "index.html", INDEX_HTML)
+    else:
+      try:
+        if getAppDir().endsWith "dist":
+          createSymLink(getAppDir()  / "index.html", staticDir / "index.html")
+        else:
+          createSymLink(getAppDir() / "dist" / "index.html", staticDir / "index.html")
+      except: discard
+    
   initDb()
   
   
@@ -206,6 +246,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     app.get("/library/{uid}/subtitles", getSubtitles)
     app.get("/library/{uid}/conversion-statistics", getConversionStatistics)
     app.get("/job-status/{jobId}", jobStatus)
+    app.addRoute("/ws", connectWebSocket)
     app.post("/convert", postConvert)
     app.delete("/library/{id}", deleteMedia)
     app.run()
