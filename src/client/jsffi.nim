@@ -80,6 +80,9 @@ iterator items*(s: JsSet):cstring =
     if value: yield key
 
 
+proc getJsException*: JsObject {.exportc.}=
+  asm """if (lastJSError && ! lastJSError.m_type) return lastJSError"""
+
 proc addCallback*[T](f: Future[T], cb: proc(t: T)) {.importcpp: "#.catch(e => e).then(@)".}
 
 proc all*[T](futs: varargs[Future[T]]): Future[seq[T]] {.importc: "Promise.all".}

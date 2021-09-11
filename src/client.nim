@@ -2,7 +2,7 @@
 import mithril
 #import asyncjs
 import mithril/common_selectors
-import client/[jsffi, entry, convert, progress, wsdispatcher]
+import client/[jsffi, entry, convert, progress, wsdispatcher, login, util]
 import common/library_types
 
 
@@ -32,7 +32,6 @@ proc newSearch: Search =
     mrouteset(getPath() & cstring"?" & mbuildQueryString(query))
 
   search.view = viewFn(Search):
-    echo "view"
           
 
       
@@ -63,7 +62,13 @@ proc newDirectory: Directory =
   var requestComplete = false
 
   result.oninit = lifecycleHook:
-    library = (await mrequest("/api/library")).to(seq[Entry])
+    var response: JsObject
+    handleErrorCodes:
+      response = await mrequest("/api/library")
+    echo "here"
+
+    #if response.error.to(bool): console.log(response.error)
+    library = response.to(seq[Entry])
     for entry in mitems library:
       init entry
     requestComplete = true
@@ -98,6 +103,7 @@ var Library = MComponent()
 Library.oninit = lifecycleHook:
   let uid = mrouteparam("path")
   state.uid = uid
+  state.startingTime = 0.0
 
   var 
     entryPromise = mrequest("/api/library/" & uid)
@@ -243,7 +249,9 @@ block:
       "/convert/:uid": wrapPage Convert,
       "/library/:path": wrapPage Library,
       "/404": wrapPage Page404,
-      "/progressbartest": toSelector TestProgressBar
+      "/progressbartest": toSelector TestProgressBar,
+      "/login": wrapPage Login,
+      "/register": wrapPage Registration
 
     }
   )

@@ -5,7 +5,7 @@ import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
 import volekino/[userdata, models, config, library, ffmpeg]
-import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles]
+import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users]
 import json
 from common/library_types import ConversionRequest
 import cligen
@@ -17,6 +17,49 @@ else:
 
 const INDEX_HTML = slurp("../dist/index.html")
 
+proc login(ctx: Context) {.async.} =
+  try:
+    let credentials = parseJson(ctx.request.body)
+    let username = credentials.getOrDefault("username").getStr()
+    let password = credentials["password"].getStr()
+    var sessionToken = ""
+    if username.len == 0:
+      sessionToken = usersDb.otpLogin(password)
+    else:
+      sessionToken = usersDb.basicLogin(username, password)
+    if sessionToken == "":
+      resp jsonResponse(%* {"error": "no matching username/password"}, Http401)
+      return
+    ctx.setCookie("session", sessionToken)
+    resp "OK", Http200
+  
+  except:
+    #echo getCurrentException()[]
+    echo getCurrentExceptionMsg()
+    resp jsonResponse(%* {"error": "incomplete login request"}, Http400)
+
+proc registerUser(ctx: Context) {.async.} =
+  try:
+    let sessionToken = ctx.request.cookies["session"]
+    let credentials = parseJson(ctx.request.body)
+    let username = credentials.getOrDefault("username").getStr()
+    let password = credentials["password"].getStr()
+    
+    if username.len > 0 and password.len > 0:
+      let sessionToken = usersDb.registerOtpUser(sessionToken, username, password)
+      if sessionToken.len > 0:
+        ctx.setCookie("session", sessionToken)
+        resp "OK"
+      else:
+        resp jsonResponse(%* {"error": "session token is likely expired?"}, Http401)
+    else:
+      resp jsonResponse(%* {"error": "invalid username or password"}, Http400)
+  except:
+    resp jsonResponse(%* {"error": "could not parse request"}, Http400)
+  
+
+proc logout(ctx: Context) {.async.} =
+  ctx.setCookie("session", "")
 
 proc libraryBase(ctx: Context) {.async.} =
   var entryUid = ""
@@ -240,15 +283,38 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
 
     var app = prologue.newApp(prologueSettings, shutdown = shutdown)
     
+    #if conf.requireAuth():
+    proc authenticateUser(requireAdmin=false): HandlerAsync =
+      result = proc (ctx: Context) {.async, gcsafe.} =
+        try:
+          let sessionToken = ctx.request.cookies["session"]
+          echo "sessionToken = ",  sessionToken
+          if usersDb.sessionAuthorizationState(sessionToken).isLoggedIn:
+            await switch(ctx)
+          else:
+            resp jsonResponse(%* {"error": "unauthorized"}, Http401)
+        except KeyError:
+          resp jsonResponse(%* {"error": "unauthorized"}, Http401)
 
-    app.get("/library", libraryBase)
-    app.get("/library/{uid}", libraryBase)
-    app.get("/library/{uid}/subtitles", getSubtitles)
-    app.get("/library/{uid}/conversion-statistics", getConversionStatistics)
+      #app.use(authenticateUser())
+    let requireAuth = conf.requireAuth()
+
+    if requireAuth and usersDb.registeredCount == 0:
+      let otp = usersDb.createOtpUser(allowAccountCreation=true, isAdmin=true)
+      echo "One time password: ", otp
+
+    var library = app.newGroup("/library", if requireAuth: @[authenticateUser()] else: @[])
+    library.get("/", libraryBase)
+    library.get("/{uid}", libraryBase)
+    library.get("/{uid}/subtitles", getSubtitles)
+    library.get("/{uid}/conversion-statistics", getConversionStatistics)
+    library.delete("/{id}", deleteMedia, middlewares= @[authenticateUser(requireAdmin=true)])
     app.get("/job-status/{jobId}", jobStatus)
     app.addRoute("/ws", connectWebSocket)
     app.post("/convert", postConvert)
-    app.delete("/library/{id}", deleteMedia)
+    app.post("/login", login)
+    app.post("/register", registerUser)
+    app.post("/logout", logout)
     app.run()
 
 

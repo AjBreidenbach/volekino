@@ -3,12 +3,14 @@ from models/db_appsettings import nil
 from models/db_library import nil
 from models/db_jobs import nil
 from models/db_subtitles import nil
+from models/db_users import nil
 #from models/db_thumbnails import nil
 
 var appSettings*: db_appsettings.AppSettings
 var libraryDb*: db_library.LibraryDb
 var jobsDb*: db_jobs.JobsDb
 var subtitlesDb*: db_subtitles.SubtitlesDb
+var usersDb*: db_users.UsersDb
 #var thumbnailsDb*: db_thumbnails.ThumbnailsDb
 #export db_library.getAll, db_library.LibraryEntry, db_library.removeEntry, db_library.getEntry
 #export db_appsettings.getProperty, db_appsettings.setProperty, db_appsettings.getAllProperties
@@ -20,6 +22,7 @@ proc createTables*(db: DbConn) =
   libraryDb = db_library.createTable(db)
   jobsDb = db_jobs.createTable(db)
   subtitlesDb = db_subtitles.createTable(db)
+  usersDb = db_users.createUserTables(db)
   #thumbnailsDb = db_thumbnails.createTable(db)
   echo "tables created"
 

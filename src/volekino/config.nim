@@ -21,6 +21,13 @@ proc loadConfig*(appSettings: AppSettings): VoleKinoConfig =
   VoleKinoConfig(appSettings: appSettings)
   
   
+proc requireAuth*(config: VoleKinoConfig): bool =
+  try:
+    parseBool config.appSettings.getProperty("require-auth")
+  except: false
+
+proc `requireAuth=`*(config: var VoleKinoConfig, require: bool) =
+  config.appSettings.setProperty("require-auth", $require)
   
 let SPLIT_RE = re"\s,"
 proc subtitleLanguages*(config: VoleKinoConfig): seq[string] =
@@ -31,6 +38,6 @@ proc subtitleLanguages*(config: VoleKinoConfig): seq[string] =
     result.add "eng"
 
 
-proc `subtitleLanguages=`*(config: VoleKinoConfig, languages: seq[string]) =
+proc `subtitleLanguages=`*(config: var VoleKinoConfig, languages: seq[string]) =
   config.appSettings.setProperty("subtitle-langs", languages.join(", "))
  
