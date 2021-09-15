@@ -1,6 +1,7 @@
 import util, db_sqlite, strutils, sqlite3
 import ../uid
 import nimcrypto, nimcrypto/[pbkdf2]
+import ../../common/user_types
 from base64 import nil
 
 const USER_STATEMENTS = statementsFrom("./statements/user.sql")
@@ -9,6 +10,25 @@ const BASICAUTHN_STATEMENTS = statementsFrom("./statements/basicauthn.sql")
 const OTPAUTHN_STATEMENTS = statementsFrom("./statements/otpauthn.sql")
 
 type UsersDb* = distinct DbConn
+
+converter toUser(row: Row): User =
+  result = User()
+  try: result.id = parseInt row[0]
+  except: result.id = -1; return
+
+  result.username = row[1]
+  result.isAdmin = parseBool row[2]
+  result.authMethod = parseInt row[3]
+  
+
+proc getUser*(udb: UsersDb, userId: int | int64): User =
+  let db = DbConn(udb)
+  toUser db.getRow(sql USER_STATEMENTS["get"], userId)
+
+proc getAllUsers*(udb: UsersDb): seq[User] =
+  let db = DbConn(udb)
+  for row in db.rows(sql USER_STATEMENTS["getall"]):
+    result.add(toUser row)
 
 proc createUserTables*(db: DbConn): UsersDb =
   db.exec(sql USER_STATEMENTS["create"])
@@ -149,6 +169,9 @@ type SessionState* = ref object
 proc isLoggedIn*(sessionState: SessionState): bool = sessionState.kind != SessionStateKind.None
 proc isAdmin*(sessionState: SessionState): bool = sessionState.kind == SessionStateKind.Admin
 
+proc getUser*(udb: UsersDb, sessionState: SessionState): User =
+  udb.getUser(sessionState.userId)
+
 proc sessionAuthorizationState*(udb: UsersDb, sessionToken: string): SessionState =
   let db = DbConn(udb)
 
@@ -178,7 +201,7 @@ proc registerOtpUser*(udb: UsersDb, sessionToken, username, password: string): s
     result = udb.createSession(userId)
     
 
-  
+let EMPTY_SESSION* = SessionState(kind: SessionStateKind.None)
 
   
 when isMainModule:

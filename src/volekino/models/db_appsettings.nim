@@ -14,9 +14,11 @@ proc setProperty*(db: AppSettings, key: string, value: string = "") =
   DbConn(db).exec(sql statement, key, value)
 
 
+import strformat
 proc getProperty*(db: AppSettings, key: string): string =
   const statement = slurp("./statements/appsettings/get.sql")
-  DbConn(db).getValue(sql statement, key)
+  result = DbConn(db).getValue(sql statement, key)
+  echo &"get ({key}) = {result}"
 
 
 proc getAllProperties*(db: AppSettings): TableRef[string,string]=

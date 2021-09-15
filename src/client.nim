@@ -2,7 +2,7 @@
 import mithril
 #import asyncjs
 import mithril/common_selectors
-import client/[jsffi, entry, convert, progress, wsdispatcher, login, util]
+import client/[jsffi, entry, convert, progress, wsdispatcher, login, admin, util]
 import common/library_types
 
 
@@ -251,7 +251,8 @@ block:
       "/404": wrapPage Page404,
       "/progressbartest": toSelector TestProgressBar,
       "/login": wrapPage Login,
-      "/register": wrapPage Registration
+      "/register": wrapPage Registration,
+      "/admin": wrapPage Admin
 
     }
   )

@@ -8,7 +8,11 @@ import volekino/[userdata, models, config, library, ffmpeg]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users]
 import json
 from common/library_types import ConversionRequest
+import common/user_types
 import cligen
+
+type SessionContext = ref object of Context
+  sessionState: SessionState
 
 when defined(windows):
   import winlean
@@ -17,7 +21,18 @@ else:
 
 const INDEX_HTML = slurp("../dist/index.html")
 
-proc login(ctx: Context) {.async.} =
+proc userGetSelf(ctx: SessionContext) {.async, gcsafe.} =
+  let user = usersDb.getUser(ctx.sessionState)
+  if user.id == -1:
+    resp jsonResponse(%* {"error": "user not found"}, Http404)
+  else:
+    resp jsonResponse(% user)
+  #resp jsonResponse(% ctx.sessionState.getUser())
+  
+proc getAllUsers(ctx: SessionContext) {.async, gcsafe.} =
+  resp jsonResponse(% usersDb.getAllUsers())
+
+proc login(ctx: SessionContext) {.async.} =
   try:
     let credentials = parseJson(ctx.request.body)
     let username = credentials.getOrDefault("username").getStr()
@@ -38,7 +53,7 @@ proc login(ctx: Context) {.async.} =
     echo getCurrentExceptionMsg()
     resp jsonResponse(%* {"error": "incomplete login request"}, Http400)
 
-proc registerUser(ctx: Context) {.async.} =
+proc registerUser(ctx: SessionContext) {.async.} =
   try:
     let sessionToken = ctx.request.cookies["session"]
     let credentials = parseJson(ctx.request.body)
@@ -58,10 +73,10 @@ proc registerUser(ctx: Context) {.async.} =
     resp jsonResponse(%* {"error": "could not parse request"}, Http400)
   
 
-proc logout(ctx: Context) {.async.} =
+proc logout(ctx: SessionContext) {.async.} =
   ctx.setCookie("session", "")
 
-proc libraryBase(ctx: Context) {.async.} =
+proc libraryBase(ctx: SessionContext) {.async.} =
   var entryUid = ""
   try:
     entryUid = ctx.getPathParams("uid", "")
@@ -74,7 +89,7 @@ proc libraryBase(ctx: Context) {.async.} =
     resp jsonResponse(% libraryDb.getEntry(entryUid))
   
 
-proc getConversionStatistics(ctx: Context) {.gcsafe, async.} =
+proc getConversionStatistics(ctx: SessionContext) {.gcsafe, async.} =
   var entryUid = ""
 
   try:
@@ -89,7 +104,7 @@ proc getConversionStatistics(ctx: Context) {.gcsafe, async.} =
   
   
 
-proc jobStatus(ctx: Context) {.async.} =
+proc jobStatus(ctx: SessionContext) {.async.} =
   var jobId = -1
   
   try:
@@ -103,7 +118,7 @@ proc jobStatus(ctx: Context) {.async.} =
     resp jsonResponse(% jobsDb.jobStatus(jobId), Http200)
 
 
-proc getSubtitles(ctx: Context) {.async, gcsafe.} =
+proc getSubtitles(ctx: SessionContext) {.async, gcsafe.} =
   let entryUid = ctx.getPathParams("uid", "")
   let subtitles = subtitlesDb.getEntrySubtitles(entryUid)
   if subtitles.len != 0 and subtitles[0].uid != "":
@@ -112,7 +127,7 @@ proc getSubtitles(ctx: Context) {.async, gcsafe.} =
     resp jsonResponse(%* [], Http404)
   
 
-proc postConvert(ctx: Context) {.async, gcsafe.} =
+proc postConvert(ctx: SessionContext) {.async, gcsafe.} =
   var conversionRequest: ConversionRequest
   try:
     conversionRequest = (parseJson ctx.request.body).to(ConversionRequest)
@@ -144,7 +159,7 @@ proc postConvert(ctx: Context) {.async, gcsafe.} =
   let jobId = convertMedia(conversionRequest)
   resp jsonResponse(%*{"jobId": jobId}, Http200)
 
-proc deleteMedia(ctx: Context) {.async, gcsafe.} =
+proc deleteMedia(ctx: SessionContext) {.async, gcsafe.} =
   var entryUid = ""
   try:
     entryUid = ctx.getPathParams("id", "-1")
@@ -182,7 +197,7 @@ proc broadcast(index: int, message: string): Future[void] =
 
   all(futures)
 
-proc connectWebSocket(ctx: Context) {.async, gcsafe.} =
+proc connectWebSocket(ctx: SessionContext) {.async, gcsafe.} =
   #await sleepAsync 200
   let ws = await newWebSocket(ctx)
   await ws.send($ websocketConnections.len)
@@ -284,18 +299,52 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     var app = prologue.newApp(prologueSettings, shutdown = shutdown)
     
     #if conf.requireAuth():
-    proc authenticateUser(requireAdmin=false): HandlerAsync =
-      result = proc (ctx: Context) {.async, gcsafe.} =
+    template authenticateUser(requireAdmin=false, requireLogin=false): HandlerAsync {.dirty.}=
+      block:
+        proc factory: HandlerAsync =
+          result = proc(ctx: SessionContext) {.async, gcsafe.} =
+            let shouldRequireAdmin = requireAdmin
+            let shouldRequireLogin = requireLogin
+            try:
+              let sessionToken = ctx.request.cookies["session"]
+              echo "sessionToken = ",  sessionToken
+              let session = usersDb.sessionAuthorizationState(sessionToken)
+              ctx.sessionState = session
+              if (shouldRequireLogin and not session.isLoggedIn) or (shouldRequireAdmin and not session.isAdmin):
+                resp jsonResponse(%* {"error": "unauthorized"}, Http401)
+              else:
+                await switch(ctx)
+            except KeyError:
+              if shouldRequireLogin or shouldRequireAdmin:
+                resp jsonResponse(%* {"error": "unauthorized"}, Http401)
+              else:
+                ctx.sessionState = EMPTY_SESSION
+                await switch(ctx)
+
+        factory()
+        
+    #[
+      this causes a codegen error
+    proc authenticateUser(requireAdmin=false, requireLogin=false): HandlerAsync = (
+      proc (ctx: SessionContext) {.async, gcsafe.} =
         try:
           let sessionToken = ctx.request.cookies["session"]
           echo "sessionToken = ",  sessionToken
-          if usersDb.sessionAuthorizationState(sessionToken).isLoggedIn:
-            await switch(ctx)
-          else:
+          let session = usersDb.sessionAuthorizationState(sessionToken)
+          ctx.sessionState = session
+          if (requireLogin and not session.isLoggedIn) or (requireAdmin and not session.isAdmin):
             resp jsonResponse(%* {"error": "unauthorized"}, Http401)
+          else:
+            await switch(ctx)
         except KeyError:
-          resp jsonResponse(%* {"error": "unauthorized"}, Http401)
+          if requireLogin or requireAdmin:
+            resp jsonResponse(%* {"error": "unauthorized"}, Http401)
+          else:
+            ctx.sessionState = EMPTY_SESSION
+            await switch(ctx)
 
+    )
+    ]#
       #app.use(authenticateUser())
     let requireAuth = conf.requireAuth()
 
@@ -303,19 +352,22 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
       let otp = usersDb.createOtpUser(allowAccountCreation=true, isAdmin=true)
       echo "One time password: ", otp
 
-    var library = app.newGroup("/library", if requireAuth: @[authenticateUser()] else: @[])
+    var library = app.newGroup("/library", middlewares= @[authenticateUser(requireLogin=requireAuth)])
     library.get("/", libraryBase)
     library.get("/{uid}", libraryBase)
     library.get("/{uid}/subtitles", getSubtitles)
     library.get("/{uid}/conversion-statistics", getConversionStatistics)
     library.delete("/{id}", deleteMedia, middlewares= @[authenticateUser(requireAdmin=true)])
     app.get("/job-status/{jobId}", jobStatus)
-    app.addRoute("/ws", connectWebSocket)
+    app.get("/users", getAllUsers, middlewares= @[authenticateUser(requireAdmin=true)])
+    app.get("/users/me", userGetSelf, middlewares= @[authenticateUser(requireLogin=true)])
+    #app.get("/user/me")
+    app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/convert", postConvert)
     app.post("/login", login)
     app.post("/register", registerUser)
     app.post("/logout", logout)
-    app.run()
+    app.run(SessionContext)
 
 
 dispatch(main)

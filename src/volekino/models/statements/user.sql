@@ -9,3 +9,9 @@ create table if not exists Users (
 #add
 insert into Users (username, isAdmin, authMethod) values (?, ?, ?)
 
+#get
+select userId, username, isAdmin, authMethod from Users where userId = ?
+
+#getall
+select userId, username, isAdmin, authMethod from Users
+

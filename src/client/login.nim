@@ -29,6 +29,14 @@ Login.view = viewFn(LoginState):
     try:
       let response = await mrequest("/api/login", Post, requestBody)
       state.errorMessage = ""
+
+      discard setTimeout(
+        cint 100,
+        TimeoutFunction(
+          proc(): void = mrouteset("/")
+        )
+      )
+
     except:
       let response = getJsException().response
       state.errorMessage = response.error.to(cstring)
@@ -91,7 +99,14 @@ Registration.view = viewFn(RegistrationState):
 
     try:
       let response = await mrequest("/api/register", Post, requestBody)
-      state.errorMessage = ""
+      state.errorMessage = "registration successful..."
+
+      discard setTimeout(
+        cint 500,
+        TimeoutFunction(
+          proc(): void = mrouteset("/")
+        )
+      )
     except:
       let response = getJsException().response
       state.errorMessage = response.error.to(cstring)
@@ -100,7 +115,7 @@ Registration.view = viewFn(RegistrationState):
     a {class: "form-wrapper"},
     mform(
       mlabel(
-        "Registration",
+        "Desired username",
         minput(a {type: "text"})
       ),
       mlabel(
