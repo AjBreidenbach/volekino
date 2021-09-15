@@ -1,5 +1,5 @@
 #add
-insert into Entries (path, uid, videoEncoding, audioEncoding, duration) values (?, ?, ?, ?, ?)
+insert into Entries (path, uid, videoEncoding, audioEncoding, duration, audioTracks, resolution, aspectRatio) values (?, ?, ?, ?, ?, ?, ?, ?)
 
 #create
 create table if not exists Entries (
@@ -7,7 +7,10 @@ create table if not exists Entries (
   path text,
   videoEncoding varchar(16),
   audioEncoding varchar(16),
-  duration integer
+  duration integer,
+  audioTracks text,
+  resolution text,
+  aspectRatio text
 );
 
 #getall

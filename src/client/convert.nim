@@ -16,6 +16,7 @@ type ConvertState = ref object
   progress: int
   status: cstring
   jobId: int
+  selectedAudioTrack: int
   progressTimeout: cint
   ready: bool
   removeOriginal: bool
@@ -34,8 +35,8 @@ proc populateEncodingParameters(state: ConvertState, selectedContainer: cstring)
   var videoEncoders = videoCodecsAvailableForContainer(selectedContainer, cs.encoders)
   i = videoEncoders.find(currentVideoEncoding)
   if i != -1:
-    videoEncoders.delete(i)
-    videoEncoders.insert("copy")
+    #videoEncoders.delete(i)
+    videoEncoders.insert("copy " & cstring"(" & currentVideoEncoding & cstring")")
     result.selectedVideoCodec = cstring"copy"
   elif videoEncoders.len > 0:
     result.selectedVideoCodec = videoEncoders[0]
@@ -63,6 +64,7 @@ proc populateEncodingParameters(state: ConvertState, selectedContainer: cstring)
 Convert.oninit = lifecycleHook:
   console.log cstring"state = ", state
   state.ready = false
+  state.selectedAudioTrack = -1
   var uid = vnode.attrs.uid
   if not uid.to(bool):
     uid = toJs mrouteparam(cstring"uid")
@@ -92,7 +94,8 @@ proc submitConversionRequest(state: var ConvertState) {.async.} =
     videoEncoding: state.selectedVideoCodec,
     audioEncoding: state.selectedAudioCodec,
     container: state.selectedContainer,
-    removeOriginal: state.removeOriginal
+    removeOriginal: state.removeOriginal,
+    selectedAudioTrack: state.selectedAudioTrack
   )
   let response = await mrequest("/api/convert", Post, toJs requestPayload)
   if response.hasOwnProperty(cstring"jobId"):
@@ -126,11 +129,12 @@ Convert.view = viewFn(ConvertState):
 
   for encoder in state.videoEncoders:
     let selected = state.selectedVideoCodec == encoder
-    videoNodes.add moption(a {value: toLowerCase(encoder), selected: selected}, encoder)
+    let value = toLowerCase(encoder).split(newRegExp(r"\s+"))[0]
+    console.log value
+    videoNodes.add moption(a {value: value, selected: selected}, encoder)
 
   if state.selectedVideoCodec.len > 0 and state.selectedVideoCodec != cstring"copy":
     info = cstring "Note: re-encoding a video stream takes substantially longer than copying into the desired container"
-
 
   for encoder in state.audioEncoders:
     let selected = state.selectedAudioCodec == encoder
@@ -143,6 +147,9 @@ Convert.view = viewFn(ConvertState):
 
   let onchangeAudio = eventHandler:
     state.selectedAudioCodec = e.target.value.to(cstring)
+
+  let onchangeAudioTrack = eventHandler:
+    state.selectedAudioTrack = parseInt(e.target.value)
 
   let onchangeVideo = eventHandler:
     state.selectedVideoCodec = e.target.value.to(cstring)
@@ -179,6 +186,25 @@ Convert.view = viewFn(ConvertState):
             mspan("none supported")
         )
       ),
+      (
+      if state.conversionStatistics.entry.audioTracks.len > 1:
+        mlabel(
+          "Audio track:",
+          block:
+            var options = newSeq[VNode]()
+            for track in state.conversionStatistics.entry.audioTracks:
+              options.add moption(
+                a {value: track.index},
+                track.title & (if track.title.len > 0: cstring"/" else: cstring"") & track.lang
+              )
+
+            mselect(
+              a {onchange: onchangeAudioTrack},
+              mchildren(options)
+            )
+        )
+      else: mchildren()
+      ),
       mlabel(
         "Video:",
         (
@@ -210,7 +236,7 @@ Convert.view = viewFn(ConvertState):
       mtext(info)
     ),
     mdiv(
-      a {style: "width: 100%;display: flex;align-items: center;"},
+      a {style: "width: 100%;display: flex;align-items: center; margin: 1em 0 1em"},
       (
         if state.progress > 0: mchildren(
           mspan(a {style: "line-height: 0; margin-right: 1em; font-family: monospace; margin: 0.5em"}, cstring"status: "  & state.status ),

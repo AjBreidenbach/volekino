@@ -348,7 +348,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
       #app.use(authenticateUser())
     let requireAuth = conf.requireAuth()
 
-    if requireAuth and usersDb.registeredCount == 0:
+    if usersDb.registeredCount == 0:
       let otp = usersDb.createOtpUser(allowAccountCreation=true, isAdmin=true)
       echo "One time password: ", otp
 
@@ -363,7 +363,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     app.get("/users/me", userGetSelf, middlewares= @[authenticateUser(requireLogin=true)])
     #app.get("/user/me")
     app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
-    app.post("/convert", postConvert)
+    app.post("/convert", postConvert, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/login", login)
     app.post("/register", registerUser)
     app.post("/logout", logout)

@@ -17,6 +17,7 @@ main
   //width: calc(100% - 5em)
   display: inline-flex
   flex-direction: column
+  background-color: white
   overflow: auto
 
 
@@ -100,16 +101,17 @@ div.entry
   div.entry-list::after
     width: 31%
 
-@media only screen and (max-width: 384px * 2)
+@media only screen and (max-width: 384px * 2.5)
   div.entry
     width: 45%
   div.entry-list::after
     width: 45%
 
-@media only screen and (max-width: 384px)
+@media only screen and (max-width: 384px * 1.5)
   div.entry
-    width: 100%
-
+    width: min(100%, 384px)
+    margin-left: auto
+    margin-right: auto
 
 
 
@@ -176,6 +178,7 @@ div.directory-top
   justify-content: center
   display: flex
   padding: 0.5em
+  background-color: #414141
 
 
 div.search-container
@@ -344,6 +347,11 @@ input[type="submit"]
   nav
     flex-direction: row
     width: unset
-    height: 4em
+    height: 3em
+    width: 100%
+    justify-content: space-around
 
-    
+  nav img
+    padding: 0em 
+.disabled
+  filter: opacity(0.25)

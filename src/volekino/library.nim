@@ -79,7 +79,8 @@ proc convertMedia*(conversionRequest: ConversionRequest): int =
     mediaFile,
     videoEncoding=conversionRequest.videoEncoding,
     audioEncoding=conversionRequest.audioEncoding,
-    container=conversionRequest.container
+    container=conversionRequest.container,
+    audioTrack=conversionRequest.selectedAudioTrack
   )
 
 

@@ -9,6 +9,7 @@ export library_types.LibraryEntry
 import ../globals
 import ../ffprobe
 import ../uid
+import json
 
 const SQL_STATEMENTS = statementsFrom("./statements/library.sql")
 
@@ -31,11 +32,9 @@ proc createTable*(db: DbConn): LibraryDb =
   return LibraryDb(db)
 
 
-
-  
-proc addEntry*(library: LibraryDb, path, uid, videoEncoding, audioEncoding: string, duration: int) =
+proc addEntry*(library: LibraryDb, path, uid, videoEncoding, audioEncoding: string, duration: int, audioTracks: string, resolution: string, aspectRatio: string) =
   let db = DbConn(library)
-  db.exec(sql SQL_STATEMENTS["add"], path, uid, videoEncoding, audioEncoding, duration)
+  db.exec(sql SQL_STATEMENTS["add"], path, uid, videoEncoding, audioEncoding, duration, audioTracks, resolution, aspectRatio)
   
 
 proc loadEntry*(mediaSource: string): LibraryEntry =
@@ -49,14 +48,22 @@ proc loadEntry*(mediaSource: string): LibraryEntry =
   result.duration = probe.duration
   result.videoEncoding = probe.videoStreamType
   result.audioEncoding = probe.audioStreamType
+  for track in probe.audioTracks:
+    result.audioTracks.add AudioTrackIdentifier(title: track.title, lang: track.lang, index: track.index)
+
+  let videoTrack = probe.videoTrack
+
+  result.resolution = videoTrack.resolution
+  result.aspectRatio = videoTrack.aspectRatio
 
   createSymLink(mediaSource, libraryDir / result.uid)
 
 
 proc addMediaSource*(library: LibraryDb, mediaSource: string): string =
   let loaded = loadEntry(mediaSource)
+  let probe = ffprobe(mediaSource)
   result = loaded.uid
-  library.addEntry(loaded.path, result, loaded.videoEncoding, loaded.audioEncoding, loaded.duration)
+  library.addEntry(loaded.path, result, loaded.videoEncoding, loaded.audioEncoding, loaded.duration, $(% loaded.audioTracks), loaded.resolution, loaded.aspectRatio)
 
 
 proc entryFromRow(row: Row): LibraryEntry =
@@ -65,7 +72,10 @@ proc entryFromRow(row: Row): LibraryEntry =
     path: row[1],
     videoEncoding: row[2],
     audioEncoding: row[3],
-    duration: parseInt row[4]
+    duration: parseInt row[4],
+    audioTracks: parseJson(row[5]).to(seq[AudioTrackIdentifier]),
+    resolution: row[6],
+    aspectRatio: row[7]
   )
   
 

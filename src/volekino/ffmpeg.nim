@@ -145,9 +145,15 @@ proc decideBestContainer(videoInputEncoding, audioInputEncoding, videoOutputEnco
     return container.container
 
 
-proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="copy", outputFile: string, jobId: int) {.async.} =
+proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="copy", outputFile: string, jobId: int, audioTrack=(-1)) {.async.} =
  
-  let args = @["-i", inputFile, "-c:v", videoEncoding, "-c:a", audioEncoding, "-y", "-stats", outputFile]
+  var args = @["-i", inputFile, "-c:v", videoEncoding, "-c:a", audioEncoding]
+  
+  if audioTrack != -1:
+    args.add ["-map", &"0:{audioTrack}", "-map", "0:v:0"]
+
+
+  args.add ["-y", "-stats", outputFile]
   echo args
   let process = startProcess(ffmpeg, args=args, options = {})
 
@@ -192,7 +198,7 @@ type FFMPEGProcessResult* = object
   jobId*: int
   filename*: string
 
-proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy", container="", inputVideoEncoding="", inputAudioEncoding=""): (FFMPEGProcessResult, Future[void]) =
+proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy", container="", inputVideoEncoding="", inputAudioEncoding="", audioTrack=(-1)): (FFMPEGProcessResult, Future[void]) =
   let (outputDir, inputBasename, inputExt) = splitFile(inputFile)
 
   if container == "" and ((inputVideoEncoding == "" and videoEncoding == "copy") or (inputAudioEncoding == "" and audioEncoding == "copy")):
@@ -217,13 +223,15 @@ proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy
 
   result[0] = FFMPEGProcessResult(jobId: jobId, filename: outputFilename)
 
-  result[1] = ffmpegProcessInner(inputFile, videoEncoding, audioEncoding, outputDestination, jobId)
+  result[1] = ffmpegProcessInner(inputFile, videoEncoding, audioEncoding, outputDestination, jobId, audioTrack=audioTrack)
 
 
+#[
 proc ffmpegProcessChecked*(inputFile: string, videoEncoding="copy", audioEncoding="copy", container="", inputVideoEncoding="", inputAudioEncoding=""): FFMPEGProcessResult =
   let inner = ffmpegProcess(inputFile, videoEncoding, audioEncoding, container, inputVideoEncoding, inputAudioEncoding)
   result = inner[0]
   asyncCheck inner[1]
+]#
 
 when isMainModule:
   initTestDb()

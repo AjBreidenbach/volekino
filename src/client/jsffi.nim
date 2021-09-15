@@ -3,7 +3,7 @@ export stdjsffi
 import asyncjs
 
 proc encodeURI*(s:cstring):cstring {.importc.}
-proc newRegExp*(pattern: cstring, modifiers: cstring = nil): JsObject {.importcpp: "new RegExp(@)".}
+proc newRegExp*(pattern: cstring, modifiers: cstring = ""): JsObject {.importcpp: "new RegExp(@)".}
 proc replace*(s:cstring, pattern: cstring | JsObject, replacement:cstring):cstring {.importcpp.}
 proc split*(s: cstring, pattern: JsObject | cstring ): seq[cstring] {.importcpp.}
 proc getQueryString*: cstring  {.importcpp: r"(m.route.get().match(/\?.*/) || '').toString()".}
@@ -50,6 +50,7 @@ proc contains*(s: JsSet, key: cstring): bool =
 proc inc(s: var JsSet) = s.length += 1
 proc dec(s: var JsSet) = s.length -= 1
 
+proc parseInt*(s: cstring | JsObject): int {.importc.}
 proc excl*(s1: var JsSet, s2: JsSet) =
   for (key, value) in s2.assoc.pairs:
     if value:

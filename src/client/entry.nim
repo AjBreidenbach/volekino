@@ -193,7 +193,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
                   mdiv(
                     a {class: "table-view-context-menu"},
                     mimg(a {src: "/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
-                    mimg(a {src: "/images/exchange.svg", style: "width: 2.5em"}),
+                    mimg(a {class: "disabled", src: "/images/exchange.svg", style: "width: 2.5em"}),
                     mimg(a {src: "/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
                   )
                 )

@@ -26,19 +26,30 @@ const CONTAINERS* = @[MP4, WEBM, OGG]
 type ConversionRequest* = object
   entryUid*: StringImpl
   container*, videoEncoding*, audioEncoding*: StringImpl
+  selectedAudioTrack*: int
   removeOriginal*: bool
+
+type AudioTrackIdentifier* = object
+  title*, lang*: StringImpl
+  index*: int
 
 type LibraryEntry* = object of RootObj
   uid*: StringImpl
   path*, videoEncoding*, audioEncoding*: StringImpl
+  audioTracks*: seq[AudioTrackIdentifier]
   duration*: int
+  resolution*: StringImpl
+  aspectRatio*: StringImpl
 
 type ConversionStatistics* = object
   entry*: LibraryEntry
   canDecodeAudio*, canDecodeVideo*: bool
   containersAvailableWithoutCodec*: seq[StringImpl]
   containersAvailableWithoutVideoCodec*: seq[StringImpl]
+  #audioTracks*: seq[AudioTrackIdentifier]
   encoders*: seq[StringImpl]
+  #resolution*: StringImpl
+  #aspectRatio*: StringImpl
 
 
 proc audioCodecsAvailableForContainer*(this: StringImpl, encoders: seq[StringImpl]): seq[StringImpl] =
