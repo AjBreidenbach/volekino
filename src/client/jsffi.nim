@@ -27,6 +27,7 @@ proc clearTimeout*(timeoutHandle: cint) {.importc.}
 
 var JSON* {.importc.} : JsObject
 proc parseFloat*(s: cstring): float {.importc.}
+proc floor*(f: float): int {.importc: "Math.floor".}
 
 converter toCstring*(s: cint | int): cstring = s.toJs.to(cstring)
 
@@ -51,6 +52,7 @@ proc inc(s: var JsSet) = s.length += 1
 proc dec(s: var JsSet) = s.length -= 1
 
 proc parseInt*(s: cstring | JsObject): int {.importc.}
+proc toFixed*(f: float, places: int) {.importcpp.}
 proc excl*(s1: var JsSet, s2: JsSet) =
   for (key, value) in s2.assoc.pairs:
     if value:
@@ -80,6 +82,8 @@ iterator items*(s: JsSet):cstring =
   for (key, value) in s.assoc.pairs:
     if value: yield key
 
+proc isFalsey*[T](jsval: T):bool {.importcpp: "!@".}
+proc isTruthy*[T](jsval: T):bool {.importcpp: "!!@".}
 
 proc getJsException*: JsObject {.exportc.}=
   asm """if (lastJSError && ! lastJSError.m_type) return lastJSError"""

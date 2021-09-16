@@ -360,7 +360,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     library.delete("/{id}", deleteMedia, middlewares= @[authenticateUser(requireAdmin=true)])
     app.get("/job-status/{jobId}", jobStatus)
     app.get("/users", getAllUsers, middlewares= @[authenticateUser(requireAdmin=true)])
-    app.get("/users/me", userGetSelf, middlewares= @[authenticateUser(requireLogin=true)])
+    app.get("/users/me", userGetSelf, middlewares= @[authenticateUser()])
     #app.get("/user/me")
     app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/convert", postConvert, middlewares= @[authenticateUser(requireAdmin=true)])

@@ -170,7 +170,10 @@ proc isLoggedIn*(sessionState: SessionState): bool = sessionState.kind != Sessio
 proc isAdmin*(sessionState: SessionState): bool = sessionState.kind == SessionStateKind.Admin
 
 proc getUser*(udb: UsersDb, sessionState: SessionState): User =
-  udb.getUser(sessionState.userId)
+  try:
+    udb.getUser(sessionState.userId)
+  except:
+    User(id: -1)
 
 proc sessionAuthorizationState*(udb: UsersDb, sessionToken: string): SessionState =
   let db = DbConn(udb)

@@ -125,7 +125,8 @@ div.entry-list
 
 div.entry-list::after
   content: ""
-  flex: auto
+  margin: 8px
+  //flex: auto
 
 div.entry-list table
   position: relative
@@ -238,6 +239,22 @@ div.entry-thumbnail-container > .title
   left:0
   z-index: 1 
 
+div.entry-thumbnail-container > .video-duration
+  position: absolute
+  color: white
+  bottom: 0
+  right: 0
+  padding: 2px
+  background-color: #0004
+  font-size: 0.9em
+  filter: drop-shadow(0px 0px 6px black)
+
+div.entry-thumbnail-container > .video-progress
+  position: absolute
+  height: 3px
+  bottom: 0
+  background: #f00d
+  left: 0
 
 .nodecorate
   text-decoration: none
@@ -353,5 +370,6 @@ input[type="submit"]
 
   nav img
     padding: 0em 
+
 .disabled
   filter: opacity(0.25)

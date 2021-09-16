@@ -1,7 +1,8 @@
 import mithril, mithril/common_selectors
-import jsffi
+import ./jsffi, ./store
 import algorithm
 import ../common/library_types
+import strformat
 
 type Entry* = ref object of LibraryEntry
   #id*: int16
@@ -27,6 +28,35 @@ proc init*(e: var Entry) =
 var selected: JsSet = newJsSet()
 var deleted: JsSet = newJsSet()
 
+proc displayDuration(dur: int): string =
+  let
+    h = dur div 3600
+    m = (dur mod 3600) div 60  
+    s = dur mod 60
+
+  if h != 0:
+    if h < 10: result.add '0'
+    result.add $h
+    result.add ':'
+
+  if h == 0 and m == 0:
+    result.add "0:"
+  else:
+    if h != 0 and m < 10:
+      result.add '0'
+
+    result.add $m
+    result.add ':'
+
+
+  if s < 10:
+    result.add '0'
+
+  result.add $s
+  
+
+  
+
 proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPath: cstring): VNode =
 
   let onSourcelessImage = eventHandler:
@@ -49,7 +79,24 @@ proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPat
             else:
               mchildren()
           )
-        )
+        ),
+        mdiv(
+          a {class: "video-duration"},
+          block:
+            let currentTime = getCurrentTime(entry.uid).floor
+            if currentTime != 0:
+              displayDuration(currentTime) & " / " & displayDuration(entry.duration)
+            else: displayDuration(entry.duration)
+        ),
+        block progressBar:
+          let currentTime = getCurrentTime(entry.uid)
+          if currentTime != 0.0:
+            let progress = $((100.0 / float(entry.duration) * currentTime).floor) & '%'
+            mdiv(a {class: "video-progress", style: &"width: {progress};"})
+
+            
+          else: mtext()
+
       )
     )#[,
     mdiv(
