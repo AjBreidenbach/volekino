@@ -68,6 +68,7 @@ div.entry-info
   padding-top: 2em
 
 div.entry
+  display: inline-block
   width: 270px
   margin: 0.5em
   overflow: hidden
@@ -76,7 +77,9 @@ div.entry
 @media only screen and (max-width: 384px * 7)
   div.entry
     width: 15.5%
-  div.entry-list::after
+    margin: 0.58%
+
+  //div.entry-list::after
     width: 15.5%
 
 //@media only screen and (max-width: 384px * 6)
@@ -86,25 +89,29 @@ div.entry
 @media only screen and (max-width: 384px * 5)
   div.entry
     width: 18%
-  div.entry-list::after
+    margin: 1%
+  //div.entry-list::after
     width: 18%
 
 @media only screen and (max-width: 384px * 4)
   div.entry
     width: 23%
-  div.entry-list::after
+    margin: 1%
+  //div.entry-list::after
     width: 23%
 
 @media only screen and (max-width: 384px * 3)
   div.entry
     width: 31%
-  div.entry-list::after
+    margin: 1.1111%
+  //div.entry-list::after
     width: 31%
 
 @media only screen and (max-width: 384px * 2.5)
   div.entry
     width: 45%
-  div.entry-list::after
+    margin: 2.5%
+  //div.entry-list::after
     width: 45%
 
 @media only screen and (max-width: 384px * 1.5)
@@ -117,13 +124,13 @@ div.entry
 
 div.entry-list
   //padding-top: 1em
-  display: flex
-  flex-wrap: wrap
+  //display: flex
+  //flex-wrap: wrap
   //justify-content: space-between
   overflow: auto
   background-color: $background_primary
 
-div.entry-list::after
+//div.entry-list::after
   content: ""
   margin: 8px
   //flex: auto

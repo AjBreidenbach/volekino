@@ -2,7 +2,7 @@ import mithril, mithril/common_selectors
 import jsffi
 #import entry
 import ../common/library_types
-import progress
+import progress, store
 
 var Convert* = MComponent()
 
@@ -61,33 +61,26 @@ proc populateEncodingParameters(state: ConvertState, selectedContainer: cstring)
   result.ready = true
 
 
-Convert.oninit = lifecycleHook:
-  console.log cstring"state = ", state
-  state.ready = false
-  state.selectedAudioTrack = -1
-  var uid = vnode.attrs.uid
-  if not uid.to(bool):
-    uid = toJs mrouteparam(cstring"uid")
-
-  #state.id = id
-
-  state.conversionStatistics = await mrequest(cstring "/api/library/" & uid.to(cstring) & cstring"/conversion-statistics")
-  
-  let cs = state.conversionStatistics.to(ConversionStatistics)
-  
-  let selectedContainer = if cs.containersAvailableWithoutCodec.len > 0:
-    cs.containersAvailableWithoutCodec[0]
-  elif cs.containersAvailableWithoutVideoCodec.len > 0:
-    cs.containersAvailableWithoutVideoCodec[0]
-  else: "mp4"
-
-
-  state = toJs populateEncodingParameters(state.to(ConvertState), selectedContainer)
-    
-
 proc fetchStatus(jobId: int): Future[JsObject] {.async.} =
   mrequest("/api/job-status/" & $jobId)
   
+proc startProgressLoop(state: var ConvertState) =
+  proc timeoutLoop {.async.}=
+    let response = await fetchStatus(state.jobId)
+
+    state.progress = response.progress.to(int)
+    state.status = response.status.to(cstring)
+
+    if response.status.to(cstring) == cstring"started":
+      state.progressTimeout = setTimeout(timeoutLoop, 500)
+    else: conversionDeleteJobId(state.conversionStatistics.entry.uid)
+
+      
+    
+  discard timeoutLoop()
+
+
+
 proc submitConversionRequest(state: var ConvertState) {.async.} =
   var requestPayload = ConversionRequest(
     entryUid: state.conversionStatistics.entry.uid,
@@ -100,22 +93,44 @@ proc submitConversionRequest(state: var ConvertState) {.async.} =
   let response = await mrequest("/api/convert", Post, toJs requestPayload)
   if response.hasOwnProperty(cstring"jobId"):
     state.jobId = response.jobId.to(int)
+    conversionSetJobId(state.conversionStatistics.entry.uid, state.jobId)
 
 
-    proc timeoutLoop {.async.}=
-      let response = await fetchStatus(state.jobId)
+    state.startProgressLoop()
 
-      state.progress = response.progress.to(int)
-      state.status = response.status.to(cstring)
-
-      if response.status.to(cstring) == cstring"started":
-        state.progressTimeout = setTimeout(timeoutLoop, 500)
-
-      
+                
     
-    discard timeoutLoop()
-            
-    
+Convert.oninit = lifecycleHook(ConvertState):
+  state.ready = false
+  state.selectedAudioTrack = -1
+  var uid = vnode.attrs.uid
+  if not uid.to(bool):
+    uid = toJs mrouteparam(cstring"uid")
+
+  #state.id = id
+
+  #state.conversionStatistics = await mrequest(cstring "/api/library/" & uid.to(cstring) & cstring"/conversion-statistics")
+  let response = await mrequest(cstring "/api/library/" & uid.to(cstring) & cstring"/conversion-statistics")
+  state.conversionStatistics = response.to(ConversionStatistics)
+
+  console.log cstring"response = ", response
+  console.log cstring"state = ", state
+
+  state.jobId = conversionGetJobId(state.conversionStatistics.entry.uid)
+  if state.jobId != -1:
+    state.startProgressLoop()
+  
+  let cs = state.conversionStatistics
+  
+  let selectedContainer = if cs.containersAvailableWithoutCodec.len > 0:
+    cs.containersAvailableWithoutCodec[0]
+  elif cs.containersAvailableWithoutVideoCodec.len > 0:
+    cs.containersAvailableWithoutVideoCodec[0]
+  else: "mp4"
+
+
+  state = populateEncodingParameters(state, selectedContainer)
+ 
   
 
 Convert.view = viewFn(ConvertState):
@@ -124,13 +139,11 @@ Convert.view = viewFn(ConvertState):
   var audioNodes = newSeq[VNode]()
   var videoNodes = newSeq[VNode]()
 
-  console.log (cstring"view", state)
   var info = cstring ""
 
   for encoder in state.videoEncoders:
     let selected = state.selectedVideoCodec == encoder
     let value = toLowerCase(encoder).split(newRegExp(r"\s+"))[0]
-    console.log value
     videoNodes.add moption(a {value: value, selected: selected}, encoder)
 
   if state.selectedVideoCodec.len > 0 and state.selectedVideoCodec != cstring"copy":

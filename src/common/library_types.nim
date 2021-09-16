@@ -41,7 +41,7 @@ type LibraryEntry* = object of RootObj
   resolution*: StringImpl
   aspectRatio*: StringImpl
 
-type ConversionStatistics* = object
+type ConversionStatistics* = ref object
   entry*: LibraryEntry
   canDecodeAudio*, canDecodeVideo*: bool
   containersAvailableWithoutCodec*: seq[StringImpl]

@@ -16,3 +16,15 @@ proc setCurrentTime*(uid: cstring, currentTime: cstring) =
   localStorage[uid & cstring":currentTime"] = currentTime
 
   
+
+proc conversionSetJobId*(uid: cstring, jobId: int) =
+  localStorage[uid & cstring":convertJobId"] = jobId
+
+proc conversionGetJobId*(uid: cstring): int =
+  try:
+    result = parseInt localStorage[uid & cstring":convertJobId"]
+    if result.isFalsey(): return -1
+  except: return -1
+  
+proc conversionDeleteJobId*(uid: cstring) =
+  discard jsDelete localStorage[uid & cstring":convertJobId"]
