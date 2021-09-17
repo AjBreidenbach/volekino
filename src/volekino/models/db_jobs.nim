@@ -1,6 +1,7 @@
 import db_sqlite
 import sqlite3
 import strutils
+import options
 
 import util
 
@@ -27,9 +28,15 @@ proc updateJob*(jdb: JobsDb, jobId: int, progress: int, status: string="started"
   echo "updateJob ", jobId, status, progress
 
 
+proc errorJob*(jdb: JobsDb, jobId: int, status="error", error="") =
+  let db = DbConn(jdb)
+  db.exec(sql SQL_STATEMENTS["error"], status, error, jobId)
+  echo "errorJob ", jobId, status, error
+
 type JobStatus* = object
   progress*: int
   status*: string
+  error*: Option[string]
 
 proc jobStatus*(jdb: JobsDb, jobId: int): JobStatus =
   let db = DbConn(jdb)
@@ -40,4 +47,7 @@ proc jobStatus*(jdb: JobsDb, jobId: int): JobStatus =
 
   result.status = row[0]
   result.progress = parseInt row[1]
+  if row[2].len > 0:
+    result.error = some(row[2])
+  #echo "jobStatus: ", row
 

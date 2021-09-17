@@ -20,7 +20,8 @@ SideNav.view = viewFn(MComponent):
 
   let tableView = query.hasOwnProperty(cstring"table")
   var useTableView = tableView
-  if getPath() != "/":
+  let currentPath = getPath()
+  if currentPath.len > 1:
     useTableView = not useTableView
 
   let libraryLink = cstring"/?" & mbuildQueryString(if useTableView:

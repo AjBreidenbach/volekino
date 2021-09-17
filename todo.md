@@ -7,7 +7,7 @@
 * allow downscaling video when not copying
 * ~~allow selection of audio track to be used~~
 * ~~get progress on ongoing job after page has been reloaded~~
-* test for crash on non-admin user trying to convert video
+* ~~test for crash on non-admin user trying to convert video~~
 
 ## users
 * generate *identicons?*

@@ -15,11 +15,13 @@ type ConvertState = ref object
   audioEncoders: seq[cstring]
   progress: int
   status: cstring
+  error: cstring
   jobId: int
   selectedAudioTrack: int
   progressTimeout: cint
   ready: bool
   removeOriginal: bool
+  experimentalMode: bool
 
 
 proc populateEncodingParameters(state: ConvertState, selectedContainer: cstring): ConvertState =
@@ -69,6 +71,7 @@ proc startProgressLoop(state: var ConvertState) =
     let response = await fetchStatus(state.jobId)
 
     state.progress = response.progress.to(int)
+    state.error = response.error.to(cstring)
     state.status = response.status.to(cstring)
 
     if response.status.to(cstring) == cstring"started":
@@ -88,7 +91,8 @@ proc submitConversionRequest(state: var ConvertState) {.async.} =
     audioEncoding: state.selectedAudioCodec,
     container: state.selectedContainer,
     removeOriginal: state.removeOriginal,
-    selectedAudioTrack: state.selectedAudioTrack
+    selectedAudioTrack: state.selectedAudioTrack,
+    experimentalMode: state.experimentalMode
   )
   let response = await mrequest("/api/convert", Post, toJs requestPayload)
   if response.hasOwnProperty(cstring"jobId"):
@@ -174,6 +178,9 @@ Convert.view = viewFn(ConvertState):
   let ontoggleRemoveOriginal = eventHandler:
     state.removeOriginal = e.target.checked.to(bool)
 
+  let ontoggleExperimentalMode = eventHandler:
+    state.experimentalMode = e.target.checked.to(bool)
+
   mdiv(
     a {style: "background-color: white; padding: 1em; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end"},
     mh6(a {style: "width: 100%"}, state.conversionStatistics.entry.path),
@@ -230,6 +237,10 @@ Convert.view = viewFn(ConvertState):
             mspan("none supported")
         )
         
+      ),
+      mlabel(
+        "Experimental mode: ",
+        minput(a {type: "checkbox", onchange: ontoggleExperimentalMode})
       )
     ),
     mdiv(
@@ -251,14 +262,18 @@ Convert.view = viewFn(ConvertState):
     mdiv(
       a {style: "width: 100%;display: flex;align-items: center; margin: 1em 0 1em"},
       (
-        if state.progress > 0: mchildren(
+        if state.progress >= 0: mchildren(
           mspan(a {style: "line-height: 0; margin-right: 1em; font-family: monospace; margin: 0.5em"}, cstring"status: "  & state.status ),
           m(ProgressBar,
             a {value: state.progress}
           )
         )
         else:
-          ""
+          mdiv(
+            a {style: "font-family: monospace; color: crimson; white-space: break-spaces"},
+            state.error
+            
+          )
       )
       
     )

@@ -66,6 +66,7 @@ proc containersAvailableWithAudioConversion(videoEncoding, audioEncoding: string
 
 
 proc conversionStatistics*(le: LibraryEntry): ConversionStatistics =
+  result = ConversionStatistics()
   result.entry = le
   result.canDecodeAudio = le.audioEncoding.canDecode
   result.canDecodeVideo = le.videoEncoding.canDecode
@@ -145,7 +146,8 @@ proc decideBestContainer(videoInputEncoding, audioInputEncoding, videoOutputEnco
     return container.container
 
 
-proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="copy", outputFile: string, jobId: int, audioTrack=(-1)) {.async.} =
+proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="copy", outputFile: string, jobId: int, audioTrack=(-1), experimentalMode=false): Future[int] {.async.} =
+  result = -1
  
   var args = @["-i", inputFile, "-c:v", videoEncoding, "-c:a", audioEncoding]
   
@@ -153,7 +155,12 @@ proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="
     args.add ["-map", &"0:{audioTrack}", "-map", "0:v:0"]
 
 
-  args.add ["-y", "-stats", outputFile]
+  args.add ["-y", "-stats"]#, outputFile]
+  if experimentalMode:
+    args.add ["-strict", "-2"]
+
+  args.add outputFile
+
   echo args
   let process = startProcess(ffmpeg, args=args, options = {})
 
@@ -165,6 +172,7 @@ proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="
   #addProcess(process.processID, proc(fd: AsyncFD): bool =
   #  jobsDb.updateJob(jobId, 100, "complete")
   #)
+  var errorBuffer = ""
 
   while process.peekExitCode == -1:
     var line = ""
@@ -173,6 +181,9 @@ proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="
     except:
       await sleepAsync(10)
       continue
+    errorBuffer.add line
+    errorBuffer.add '\n'
+    #echo "stdErr: ", line
     if duration == -1:
       duration = ffmpegOutputDuration(line)
     elif currentTime == -1:
@@ -185,12 +196,14 @@ proc ffmpegProcessInner(inputFile: string, videoEncoding="copy", audioEncoding="
 
 
   let exitCode = waitForExit(process, timeout=1000)
+  result = exitCode
 
   if exitCode == 0:
     jobsDb.updateJob(jobId, 100, "complete")
   else:
-    jobsDb.updateJob(jobId, -1, "exitCode: " & $exitCode)
-    echo process.outputStream.readAll
+    #let output = process.outputStream.readAll
+    jobsDb.errorJob(jobId, status=("exitCode: " & $exitCode), error=errorBuffer)
+    #echo output#process.outputStream.readAll
   
   process.close
 
@@ -198,7 +211,8 @@ type FFMPEGProcessResult* = object
   jobId*: int
   filename*: string
 
-proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy", container="", inputVideoEncoding="", inputAudioEncoding="", audioTrack=(-1)): (FFMPEGProcessResult, Future[void]) =
+#TODO move arg builder here
+proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy", container="", inputVideoEncoding="", inputAudioEncoding="", audioTrack=(-1), experimentalMode=false): (FFMPEGProcessResult, Future[int]) =
   let (outputDir, inputBasename, inputExt) = splitFile(inputFile)
 
   if container == "" and ((inputVideoEncoding == "" and videoEncoding == "copy") or (inputAudioEncoding == "" and audioEncoding == "copy")):
@@ -207,7 +221,8 @@ proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy
   
   if container.len == 0:
     let container = decideBestContainer(inputVideoEncoding, inputAudioEncoding, videoEncoding, audioEncoding)
-    return ffmpegProcess(inputFile, videoEncoding, audioEncoding, container)
+    #NOTE: DON'T FORGET TO ADD NEW PARAMS HERE
+    return ffmpegProcess(inputFile, videoEncoding, audioEncoding, container, audioTrack=audioTrack, experimentalMode=experimentalMode)
 
   let outputFilename = (
     if container == inputExt[1..^1]:
@@ -223,7 +238,7 @@ proc ffmpegProcess*(inputFile: string, videoEncoding="copy", audioEncoding="copy
 
   result[0] = FFMPEGProcessResult(jobId: jobId, filename: outputFilename)
 
-  result[1] = ffmpegProcessInner(inputFile, videoEncoding, audioEncoding, outputDestination, jobId, audioTrack=audioTrack)
+  result[1] = ffmpegProcessInner(inputFile, videoEncoding, audioEncoding, outputDestination, jobId, audioTrack=audioTrack, experimentalMode=experimentalMode)
 
 
 #[

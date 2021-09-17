@@ -29,25 +29,27 @@ let SUB = %"subtitle"
 
 proc videoStreamType*(f: FFProbe): string =
   let node = JsonNode(f)
-  let streams = node["streams"].getElems()
+  let streams = node.getOrDefault("streams").getElems()
 
   for stream in streams:
     if stream["codec_type"] == VIDEO: return stream["codec_name"].getStr()
 
 proc duration*(f: FFProbe): int =
   let node = JsonNode(f)
-  int parseFloat(node["format"]["duration"].getStr())
+  try:
+    int parseFloat(node["format"]["duration"].getStr())
+  except: 0
   
 proc audioStreamType*(f: FFProbe): string =
   let node = JsonNode(f)
-  let streams = node["streams"].getElems()
+  let streams = node.getOrDefault("streams").getElems()
 
   for stream in streams:
     if stream["codec_type"] == AUDIO: return stream["codec_name"].getStr()
 
 proc videoTrack*(f: FFProbe): FFProbeStream =
   let node = JsonNode(f)
-  let streams = node["streams"].getElems()
+  let streams = node.getOrDefault("streams").getElems()
   for stream in streams:
     if stream["codec_type"] == VIDEO:
       return FFProbeStream(stream)
@@ -55,14 +57,14 @@ proc videoTrack*(f: FFProbe): FFProbeStream =
 
 proc audioTracks*(f: FFProbe): seq[FFProbeStream] =
   let node = JsonNode(f)
-  let streams = node["streams"].getElems()
+  let streams = node.getOrDefault("streams").getElems()
   for stream in streams:
     if stream["codec_type"] == AUDIO:
       result.add FFProbeStream(stream)
 
 proc subtitles*(f: FFProbe): seq[FFProbeSubtitles] =
   let node = JsonNode(f)
-  let streams = node["streams"].getElems()
+  let streams = node.getOrDefault("streams").getElems()
   for stream in streams:
     if stream["codec_type"] == SUB:
       result.add FFProbeSubtitles(stream)
@@ -86,12 +88,16 @@ proc codec*(str: FFProbeStream): string =
   node["codec_name"].getStr()
 
 proc resolution*(str: FFProbeStream): string =
-  let node = JsonNode(str)
-  $node["width"].getInt() & 'x' & $node["height"].getInt()
+  try:
+    let node = JsonNode(str)
+    $node["width"].getInt() & 'x' & $node["height"].getInt()
+  except: ""
 
 proc aspectRatio*(str: FFProbeStream): string =
-  let node = JsonNode(str)
-  node["display_aspect_ratio"].getStr()
+  try:
+    let node = JsonNode(str)
+    node["display_aspect_ratio"].getStr()
+  except: ""
 
 
 

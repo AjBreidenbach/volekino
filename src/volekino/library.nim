@@ -50,7 +50,9 @@ proc syncMedia*(conf: VoleKinoConfig) =
     var entryUid = libraryDb.getEntryUid(mediaFile)
     if entryUid.len == 0:
       entryUid = libraryDb.addMediaSource(mediaFile)
-      createThumbnail(mediaFile, entryUid)
+      let thumbnailCreated = createThumbnail(mediaFile, entryUid)
+      if not thumbnailCreated:
+        discard #TODO
       
     let subtitleTracks = probeSubtitleTracks(mediaFile)
     for (uid, lang, title, index) in subtitleTracks:
@@ -80,16 +82,22 @@ proc convertMedia*(conversionRequest: ConversionRequest): int =
     videoEncoding=conversionRequest.videoEncoding,
     audioEncoding=conversionRequest.audioEncoding,
     container=conversionRequest.container,
-    audioTrack=conversionRequest.selectedAudioTrack
+    audioTrack=conversionRequest.selectedAudioTrack,
+    experimentalMode=conversionRequest.experimentalMode
   )
 
 
-  proc ffmpegCallback(f: Future[void]) {.gcsafe.} =
+  proc ffmpegCallback(f: Future[int]) {.gcsafe.} =
     asyncCheck f
+    let exitCode = f.read()
+    if exitCode != 0:
+      return
+
     let mediaFile = mediaFile.splitFile()[0] / ffmpegResult.filename
     let entryUid = libraryDb.addMediaSource(mediaFile)
     subtitlesDb.shareSubtitles(ownerUid=conversionRequest.entryUid, receiverUid=entryUid)
     let thumbnailsDir = publicDir / "thumbnails"
+
     try:
       copyFile(thumbnailsDir / conversionRequest.entryUid, thumbnailsDir / entryUid)
     except: discard

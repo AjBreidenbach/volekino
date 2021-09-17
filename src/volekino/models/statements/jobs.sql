@@ -2,7 +2,8 @@
 create table if not exists Jobs(
   id integer not null primary key autoincrement,
   progress integer,
-  status varchar(32)
+  status varchar(32),
+  error text
 )
 
 #create-job
@@ -13,5 +14,10 @@ update Jobs
 set progress = ?, status = ?
 where id = ?
 
+#error
+update Jobs
+set progress = -1, status = ?, error = ?
+where id = ?
+
 #job-status
-select status, progress from Jobs where id = ?
+select status, progress, error from Jobs where id = ?

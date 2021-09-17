@@ -7,7 +7,7 @@ const WEBM_VIDEO_CODECS = @[StringImpl"vp8", StringImpl"vp9", StringImpl"av1"]
 const MP4_VIDEO_CODECS = @[StringImpl"h264", StringImpl"av1"]
 const OGG_VIDEO_CODECS = @[StringImpl"theora"]
 const WEBM_AUDIO_CODECS = @[StringImpl"opus", StringImpl"vorbis"]
-const MP4_AUDIO_CODECS = @[StringImpl"aac", StringImpl"mp3", #[experimental ?"opus",]# StringImpl"flac"] # chrome doesn't seem to support eac3
+const MP4_AUDIO_CODECS = @[StringImpl"aac", StringImpl"mp3", StringImpl"opus", StringImpl"vorbis", StringImpl"flac"] # chrome doesn't seem to support eac3
 const OGG_AUDIO_CODECS = @[StringImpl"vorbis", StringImpl"opus", StringImpl"flac"]
 
 type MediaContainer* = object
@@ -27,6 +27,7 @@ type ConversionRequest* = object
   entryUid*: StringImpl
   container*, videoEncoding*, audioEncoding*: StringImpl
   selectedAudioTrack*: int
+  experimentalMode*: bool
   removeOriginal*: bool
 
 type AudioTrackIdentifier* = object

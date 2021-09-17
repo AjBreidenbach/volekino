@@ -68,7 +68,7 @@ proc createThumbnailDirIfNeeded =
     thumbnailDirCreated = true
 
 
-proc createThumbnail*(mediaSource, uid: string) = #: string =
+proc createThumbnail*(mediaSource, uid: string): bool = #: string =
   createThumbnailDirIfNeeded()
   
   #let uid = genUid()
@@ -86,7 +86,8 @@ proc createThumbnail*(mediaSource, uid: string) = #: string =
     thumbnailTime
   )
   
-  assert exitCode == 0
+  exitCode == 0
+  #assert exitCode == 0
        
 
 proc removeOrphanThumbnails*(library: LibraryDb) =
