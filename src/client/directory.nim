@@ -12,7 +12,7 @@ proc newSearch: Search =
   search.onbeforeupdate = beforeUpdateHook:
     var query = getQuery()
     result = not query.u.to(bool)# or not query.search.to(bool)
-    echo result
+    #echo result
 
 
   let oninput = eventHandler:
@@ -56,7 +56,6 @@ proc newDirectory*: Directory =
     var response: JsObject
     handleErrorCodes:
       response = await mrequest("/api/library")
-    echo "here"
 
     #if response.error.to(bool): console.log(response.error)
     library = response.to(seq[Entry])

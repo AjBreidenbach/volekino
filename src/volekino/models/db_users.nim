@@ -40,8 +40,9 @@ proc createUserTables*(db: DbConn): UsersDb =
 
 type AuthMethod = distinct string
 
-const BASIC_AUTH* = AuthMethod "0"
-const OTP_AUTH* = AuthMethod "1"
+const BASIC_AUTH* = AuthMethod"0"
+const OTP_AUTH* = AuthMethod"1"
+const OTP_AUTH_REGISTRATION_ALLOWED* = AuthMethod"3"
 
 proc registeredCount*(udb: UsersDb): int =
   let db = DbConn(udb)
@@ -66,7 +67,11 @@ proc addBasicAuthn(udb: UsersDb, userId: int64, pwhash, salt: string) =
 
 proc createOtpUser*(udb: UsersDb, allowAccountCreation=false, isAdmin=false): string =
   #let db = DbConn(udb)
-  let userId = udb.addUser("", OTP_AUTH, isAdmin=isAdmin)
+  let userId = udb.addUser(
+    "",
+    if allowAccountCreation: OTP_AUTH_REGISTRATION_ALLOWED else: OTP_AUTH,
+    isAdmin=isAdmin
+  )
   result = genUidB64()
   udb.addOtpAuthn(userId, allowAccountCreation=allowAccountCreation, otp=result)
 

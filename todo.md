@@ -20,7 +20,7 @@
 * enforce unique usernames
 
 ## admin
-* allow creation of otp users
+* ~~allow creation of otp users~~
 * view/modify current settings
 * make memcopy, sendfile available in settings
 

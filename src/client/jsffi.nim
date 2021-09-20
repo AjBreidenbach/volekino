@@ -32,6 +32,7 @@ proc floor*(f: float): int {.importc: "Math.floor".}
 converter toCstring*(s: cint | int): cstring = s.toJs.to(cstring)
 
 var document* {.importc.} : JsObject
+var navigator* {.importc.} : JsObject
 var location* {.importc.} : JsObject
 var console* {.importc.} : JsObject
 var localStorage* {.importc.}: JsAssoc[cstring, cstring]

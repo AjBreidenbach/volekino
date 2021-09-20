@@ -28,7 +28,14 @@ proc userGetSelf(ctx: SessionContext) {.async, gcsafe.} =
   else:
     resp jsonResponse(% user)
   #resp jsonResponse(% ctx.sessionState.getUser())
-  
+
+proc postUsers(ctx: SessionContext) {.async.} =
+  try:
+    let request = parseJson(ctx.request.body).to(CreateUserRequest)
+    let uid = usersDb.createOtpUser(allowAccountCreation=request.allowAccountCreation, isAdmin=request.isAdmin)
+    resp jsonResponse(%* {"uid": uid}, Http200)
+  except: resp jsonResponse(%* {"error": "could not parse create user request"}, Http400)
+
 proc getAllUsers(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(% usersDb.getAllUsers())
 
@@ -361,6 +368,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     app.get("/job-status/{jobId}", jobStatus)
     app.get("/users", getAllUsers, middlewares= @[authenticateUser(requireAdmin=true)])
     app.get("/users/me", userGetSelf, middlewares= @[authenticateUser()])
+    app.post("/users", postUsers, middlewares= @[authenticateUser(requireAdmin=true)])
     #app.get("/user/me")
     app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/convert", postConvert, middlewares= @[authenticateUser(requireAdmin=true)])

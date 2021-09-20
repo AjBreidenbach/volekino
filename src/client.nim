@@ -2,7 +2,7 @@
 import mithril
 #import asyncjs
 import mithril/common_selectors
-import client/[jsffi, directory, convert, progress, wsdispatcher, login, admin, media, util]
+import client/[jsffi, directory, convert, progress, wsdispatcher, login, user_menu, media, util]
 import common/library_types
 
 
@@ -33,7 +33,10 @@ SideNav.view = viewFn(MComponent):
   )
 
   mnav(
-    mimg(a {src: "/images/users.svg"}),
+    m(mrouteLink,
+      a {href: "/user-menu"},
+      mimg(a {src: "/images/users.svg"})
+    ),
     m(mrouteLink,
       a {href: libraryLink},
       (
@@ -43,7 +46,7 @@ SideNav.view = viewFn(MComponent):
           mimg(a {src: "/images/list-view.svg"})
       )
     ),
-    mimg(a {src: "/images/movie-camera.svg"}),
+    #mimg(a {src: "/images/movie-camera.svg"}),
     mimg(a {src: "/images/add.svg"}),
     mimg(a {src: "/images/settings.svg"})
   )
@@ -76,7 +79,7 @@ block:
       "/progressbartest": toSelector TestProgressBar,
       "/login": wrapPage Login,
       "/register": wrapPage Registration,
-      "/admin": wrapPage Admin
+      "/user-menu": wrapPage UserMenu
 
     }
   )

@@ -3,6 +3,7 @@ dist/
 node_modules/
 *.out
 src/**
+volekino
 
 !src/**/*.nim
 !src/**/*.sql

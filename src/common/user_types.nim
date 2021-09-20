@@ -24,3 +24,6 @@ type AppSetting* = ref object
   description*: StringImpl
   selector*: StringImpl
   requiresRestart*: bool
+
+type CreateUserRequest* = object
+  isAdmin*, allowAccountCreation*: bool 
