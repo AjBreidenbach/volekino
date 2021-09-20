@@ -10,7 +10,11 @@ proc getQueryString*: cstring  {.importcpp: r"(m.route.get().match(/\?.*/) || ''
 proc preserveQuery*(url: cstring): cstring =
   url & getQueryString()
 proc getQuery*: JsObject {.importcpp: r"m.parseQueryString((m.route.get().match(/\?.*/) || '').toString())".}
-proc getPath*: cstring {.importcpp: r"(m.route.get().match(/.*(?=\?)/) || '').toString()".}
+proc getPath*: cstring = #{.importcpp: r"(m.route.get().match(/.*(?=\?)/) || '').toString()".}
+  asm """
+    let route = m.route.get()
+    return (route.match(/.*(?=\?)/) || route).toString()
+  """
 proc join*(s: seq[cstring], c: cstring): cstring {.importcpp.}
 proc toLowerCase*(s: cstring): cstring {.importcpp.}
 #proc hasOwnProperty*(o: JsObject, s:cstring):bool {.importcpp.}

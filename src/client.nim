@@ -24,12 +24,13 @@ SideNav.view = viewFn(MComponent):
   if currentPath.len > 1:
     useTableView = not useTableView
 
-  let libraryLink = cstring"/?" & mbuildQueryString(if useTableView:
-    discard jsDelete query.table
-    query
-  else:
-    query.table = cstring""
-    query
+  let libraryLink = cstring"/?" & mbuildQueryString(
+    if useTableView:
+      discard jsDelete query.table
+      query
+    else:
+      query.table = cstring""
+      query
   )
 
   mnav(
@@ -61,7 +62,6 @@ proc wrapPage(selector: MithrilSelector): MithrilSelector =
       ),
       SideNav
     )
-    
 
 
   wrapper

@@ -15,13 +15,13 @@
 * enforce session expiration period
 * enforce otp expiration period
 * set session cookie for the designated period of time
-* access registration through ui
+* ~~access registration through ui~~
 * stop playback until all clients have finished buffering
 * enforce unique usernames
 
 ## admin
 * ~~allow creation of otp users~~
-* view/modify current settings
+* ~~view/modify current settings~~
 * make memcopy, sendfile available in settings
 
 ## proxy

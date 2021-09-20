@@ -11,20 +11,22 @@ const AS_ADMIN = cstring"logged in as admin"
 type SettingsManagerState = ref object
   ready: bool
   settings: seq[AppSetting]
+  initialSettings: cstring
   request: ApplySettingsRequest
 
 var SettingsManager = MComponent()
 
 proc refreshSettings(state: var SettingsManagerState) {.async.} =
-  state.ready = false
   let response = await mrequest("/api/settings")
-
   state.settings = response.to(seq[AppSetting])
+  state.initialSettings = JSON.stringify(response).to(cstring)
+  state.request = @[]
 
   state.ready = true
 
 SettingsManager.oninit = lifecycleHook(SettingsManagerState):
-  state.request = @[]
+  state.ready = false
+  #state.request = @[]
   await state.refreshSettings()
     
 SettingsManager.view = viewFn(SettingsManagerState):
@@ -35,11 +37,14 @@ SettingsManager.view = viewFn(SettingsManagerState):
       console.log getJsException
 
     await state.refreshSettings()
-    state.request = @[]
+
+  let clear = eventHandler:
+    discard state.refreshSettings()
     
   if state.ready:
     mchildren(
       mtable(
+        a {class: "admin-settings"},
         mtr(mth"Setting", mth"Description",  mth"Default", mth"Value"),
         mchildren(
         block:
@@ -56,7 +61,10 @@ SettingsManager.view = viewFn(SettingsManagerState):
                     e.target.value.to(cstring)
                 )
 
-                setting.value = toJs newValue
+                try:
+                  setting.value = JSON.parse newValue
+                except:
+                  setting.value = toJs newValue
 
                 var found = false
                 for fragment in state.request.mitems:
@@ -68,8 +76,8 @@ SettingsManager.view = viewFn(SettingsManagerState):
 
 
               nodes.add mtr(
-                mtd(a {style: "font-family: monospace;"}, setting.name),
-                mtd(setting.description),
+                mtd(a {style: "font-family: monospace; white-space: nowrap;"}, setting.name),
+                mtd(a {style: "font-size: 0.9em;"}, setting.description),
                 mtd(a {style: "font-family: monospace;"},setting.default),
                 mtd(
                   m(toSelector $setting.selector, a {value: setting.value, checked: isTruthy(setting.value), onchange: onchange})
@@ -78,8 +86,12 @@ SettingsManager.view = viewFn(SettingsManagerState):
           nodes
         )
       ),
-      if state.request.len > 0:
-        mbutton(a {onclick: commitChanges}, "Commit changes")
+      if state.initialSettings != JSON.stringify(state.settings).to(cstring):
+        mdiv(
+          a {style: "display: flex; justify-content: space-between"},
+          mbutton(a {onclick: commitChanges}, "Commit changes"),
+          mbutton(a {onclick: clear}, "Clear")
+        )
       else: nil
     )
   else: nil
