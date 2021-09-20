@@ -16,11 +16,17 @@ type User* = ref object
 proc isRegistered*(user: User): bool =
   user.authMethod == 0
 
-type ApplySettingRequest* = object
-  key, value: StringImpl
+type ApplySettingsFragment* = ref object
+  key*, value*: StringImpl
+
+type ApplySettingsRequest* = seq[ApplySettingsFragment]
   
+
+
 type AppSetting* = ref object
+  name*: StringImpl
   default*: Dynamic
+  value*: Dynamic
   description*: StringImpl
   selector*: StringImpl
   requiresRestart*: bool

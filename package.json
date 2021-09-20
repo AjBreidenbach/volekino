@@ -11,6 +11,7 @@
   "dependencies": {
     "pug": "^3.0.2",
     "sass": "^1.38.1",
-    "terser": "^5.7.2"
+    "terser": "^5.7.2",
+    "yaml-cli": "^1.1.8"
   }
 }

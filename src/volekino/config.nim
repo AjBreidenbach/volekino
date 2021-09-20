@@ -1,6 +1,9 @@
 import net, strutils
 import strutils, re
 import models/db_appsettings
+import config/default_settings
+import ../common/user_types
+import tables, json
 
 type VoleKinoConfig* = object
   appSettings: AppSettings
@@ -41,3 +44,20 @@ proc subtitleLanguages*(config: VoleKinoConfig): seq[string] =
 proc `subtitleLanguages=`*(config: var VoleKinoConfig, languages: seq[string]) =
   config.appSettings.setProperty("subtitle-langs", languages.join(", "))
  
+proc applySettings*(config: VoleKinoConfig, settings: ApplySettingsRequest) =
+  for setting in settings:
+    config.appSettings.setProperty(setting.key, setting.value)
+
+proc getSettings*(config: VoleKinoConfig): seq[AppSetting] =
+  result = getDefaultSettings()
+  let appliedSettings = config.appSettings.getAllProperties()
+
+  for (key, value) in appliedSettings.pairs:
+    let value = try:
+      parseJson(value)
+    except: newJString(value)
+
+    for setting in result:
+      if setting.name == key:
+        setting.value = value
+

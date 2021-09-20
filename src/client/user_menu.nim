@@ -1,11 +1,88 @@
 import jsffi, mithril, mithril/common_selectors
 import ../common/user_types
+from sugar import capture
 
 
 
 const LOGGED_OUT = cstring"not logged in"
 const PLAIN_USER = cstring"logged in"
 const AS_ADMIN = cstring"logged in as admin"
+
+type SettingsManagerState = ref object
+  ready: bool
+  settings: seq[AppSetting]
+  request: ApplySettingsRequest
+
+var SettingsManager = MComponent()
+
+proc refreshSettings(state: var SettingsManagerState) {.async.} =
+  state.ready = false
+  let response = await mrequest("/api/settings")
+
+  state.settings = response.to(seq[AppSetting])
+
+  state.ready = true
+
+SettingsManager.oninit = lifecycleHook(SettingsManagerState):
+  state.request = @[]
+  await state.refreshSettings()
+    
+SettingsManager.view = viewFn(SettingsManagerState):
+  let commitChanges = eventHandlerAsync:
+    try:
+      let response = await mrequest("/api/settings", Post, toJs state.request)
+    except:
+      console.log getJsException
+
+    await state.refreshSettings()
+    state.request = @[]
+    
+  if state.ready:
+    mchildren(
+      mtable(
+        mtr(mth"Setting", mth"Description",  mth"Default", mth"Value"),
+        mchildren(
+        block:
+          var nodes = newSeq[VNode]()
+          for setting in state.settings:
+            closureScope:
+              let setting = setting
+              let onchange = eventHandler:
+                #e.redraw = false
+                let newValue = cstring"" & (
+                  if e.target["type"].to(cstring) == cstring"checkbox":
+                    e.target.checked.to(cstring)
+                  else:
+                    e.target.value.to(cstring)
+                )
+
+                setting.value = toJs newValue
+
+                var found = false
+                for fragment in state.request.mitems:
+                  if fragment.key == setting.name:
+                    found = true
+                    fragment.value = newValue
+                if not found:
+                  state.request.add ApplySettingsFragment(key: setting.name, value: newValue)
+
+
+              nodes.add mtr(
+                mtd(a {style: "font-family: monospace;"}, setting.name),
+                mtd(setting.description),
+                mtd(a {style: "font-family: monospace;"},setting.default),
+                mtd(
+                  m(toSelector $setting.selector, a {value: setting.value, checked: isTruthy(setting.value), onchange: onchange})
+                )
+              )
+          nodes
+        )
+      ),
+      if state.request.len > 0:
+        mbutton(a {onclick: commitChanges}, "Commit changes")
+      else: nil
+    )
+  else: nil
 
 type OTPUserGeneratorState = ref object
   allowAccountCreation, isAdmin: bool
@@ -95,7 +172,8 @@ AdminPanel.view = viewFn(AdminPanelState):
   mdiv(
     a {style: "margin: 2em 1em;"},
     mh5("Admin panel"),
-    m(OTPUserGenerator)
+    m(OTPUserGenerator),
+    m(SettingsManager)
   )
 
 type UserMenuState = ref object

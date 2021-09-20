@@ -1,0 +1,33 @@
+port:
+  default: 7001
+  description: Port that the VoleKino controller listens on;  It is not a good idea to open this up to the internet.
+  selector: input[type="number"][placeholder="7001"]
+local-proxy-pass:
+  default: true
+  description: Determines whether apache should forward requests to the controller;  If you are using a proxy server, it is better to turn this off.
+  selector: input[type="checkbox"]
+proxy-server:
+  default: "" #volekino.abreidenbach.com
+  description: HTTPS enabled server used to provide a secure connection to your local VoleKino instance; This connection is made by opening an SSH tunnel between the proxy server and your local instance and routing the traffic through the tunnel.  End users will access your instance through a prefixed url in the format of `https://volekino.com/<your-instance-identifier>/*`
+  selector: input[type="url"]
+proxy-server-token:
+  default: ""
+  description: Token obtained after registering with a VoleKino proxy service;  Used to authenticate your VoleKino instance with the proxy server;
+  selector: input[type="text"]
+require-auth:
+  default: false
+  requiresRestart: true
+  description: Require authentication to access api;  If this is set to true, users will effectively be required to login to access any content.
+  selector: input[type="checkbox"]
+otp-expiration-period: 
+  default: 1
+  description: Expiration period (in hours) before a one time password because unusable;
+  selector: input[type="number"][step="1"][min="1"]
+session-duration:
+  default: 168
+  description: Period (in hours) before session records are deleted (In the browser and on the server);  If a user is logged in with a one time password and does not register (or is not permitted to register) they will need to get another one time password to continue using the server.
+  selector: input[type="number"][step="1"][min="1"]
+subtitle-langs:
+  default: eng
+  description: Extract these languages from media files with subtitle streams;  If a stream's language is not labelled, it will be extracted and included in the VoleKino database along with streams matching this setting.  A value of '*' matches all languages (unimplemented).
+  selector: input[type="text"]
