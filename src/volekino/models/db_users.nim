@@ -3,6 +3,7 @@ import ../uid
 import nimcrypto, nimcrypto/[pbkdf2]
 import ../../common/user_types
 from base64 import nil
+import times
 
 const USER_STATEMENTS = statementsFrom("./statements/user.sql")
 const SESSION_STATEMENTS = statementsFrom("./statements/session.sql")
@@ -132,8 +133,21 @@ proc allowsAccountCreation(udb: UsersDb, otp: string): bool =
     result = false
 
 
-proc otpLogin*(udb: UsersDb, otp: string): string =
+proc otpCreationTime(udb: UsersDb, otp: string): int =
+  let db = DbConn(udb)
+  try:
+    let value = db.getValue(sql OTPAUTHN_STATEMENTS["ts"], otp)
+    parseInt value
+  except: 0
+
+
+proc otpLogin*(udb: UsersDb, otp: string, expirationPeriod: int): string =
   #TODO check if otp is expired
+  let ts = udb.otpCreationTime(otp)
+  let currentTime = toUnix getTime()
+
+  if ts + expirationPeriod < currentTime: return
+
   result = udb.createSession(
     udb.getUserFromOTP(otp),
     allowAccountCreation=udb.allowsAccountCreation(otp)
@@ -180,15 +194,18 @@ proc getUser*(udb: UsersDb, sessionState: SessionState): User =
   except:
     User(id: -1)
 
-proc sessionAuthorizationState*(udb: UsersDb, sessionToken: string): SessionState =
+proc sessionAuthorizationState*(udb: UsersDb, sessionToken: string, expirationPeriod: int): SessionState =
   let db = DbConn(udb)
 
   let row = db.getRow(sql SESSION_STATEMENTS["get"], sessionToken)
 
-  #TODO check if session is expired
-  echo "row = ", row
-  
   if row[0].len == 0:
+    return SessionState(kind: SessionStateKind.None)
+
+  let ts = try: parseInt row[3] except: 0
+  let currentTime = toUnix getTime()
+
+  if ts + expirationPeriod < currentTime:
     return SessionState(kind: SessionStateKind.None)
 
   let kind = if parseBool row[1]: SessionStateKind.Admin else: SessionStateKind.LoggedIn
@@ -201,10 +218,9 @@ proc sessionAuthorizationState*(udb: UsersDb, sessionToken: string): SessionStat
 
 #proc updateCredentials(udb: UsersDb, userId: int64, )
 
-proc registerOtpUser*(udb: UsersDb, sessionToken, username, password: string): string =
-  let sessionState = udb.sessionAuthorizationState(sessionToken)
+proc registerOtpUser*(udb: UsersDb, sessionToken, username, password: string, expirationPeriod: int): string =
+  let sessionState = udb.sessionAuthorizationState(sessionToken, expirationPeriod)
   if sessionState.allowAccountCreation:
-    #echo "here @1"
     let userId = udb.createUser(username, password, isAdmin=sessionState.isAdmin)
     result = udb.createSession(userId)
     

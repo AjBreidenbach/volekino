@@ -12,9 +12,9 @@
 ## users
 * generate *identicons?*
 * indicate how many users are connected?
-* enforce session expiration period
-* enforce otp expiration period
-* set session cookie for the designated period of time
+* ~~enforce session expiration period~~
+* ~~enforce otp expiration period~~
+* ~~set session cookie for the designated period of time~~
 * ~~access registration through ui~~
 * stop playback until all clients have finished buffering
 * enforce unique usernames

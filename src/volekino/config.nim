@@ -31,7 +31,22 @@ proc requireAuth*(config: VoleKinoConfig): bool =
 
 proc `requireAuth=`*(config: var VoleKinoConfig, require: bool) =
   config.appSettings.setProperty("require-auth", $require)
-  
+
+proc sessionDuration*(config: VoleKinoConfig): int =
+  try:
+    result = parseInt config.appSettings.getProperty("session-duration")
+  except: result = 168
+
+  result *= 3600
+
+proc otpExpirationPeriod*(config: VoleKinoConfig): int =
+  try:
+    result = parseInt config.appSettings.getProperty("otp-expiration-period")
+  except: result = 1
+
+  result *= 3600
+
+
 let SPLIT_RE = re"\s,"
 proc subtitleLanguages*(config: VoleKinoConfig): seq[string] =
   result = config.appSettings.getProperty("subtitle-langs").split(SPLIT_RE)

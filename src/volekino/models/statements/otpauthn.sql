@@ -19,3 +19,5 @@ delete from OTPAuthn where otp = ?
 #allows-account-creation
 select allowAccountCreation from OTPAuthn where otp = ?
 
+#ts
+select ts from OTPAuthn where otp = ?

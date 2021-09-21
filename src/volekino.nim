@@ -9,6 +9,7 @@ import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_us
 import json
 from common/library_types import ConversionRequest
 import common/user_types
+import options
 import cligen
 
 
@@ -60,13 +61,14 @@ proc login(ctx: SessionContext) {.async.} =
     let password = credentials["password"].getStr()
     var sessionToken = ""
     if username.len == 0:
-      sessionToken = usersDb.otpLogin(password)
+      sessionToken = usersDb.otpLogin(password, conf.otpExpirationPeriod)
     else:
       sessionToken = usersDb.basicLogin(username, password)
     if sessionToken == "":
-      resp jsonResponse(%* {"error": "no matching username/password"}, Http401)
+      let error = if username.len > 0: "no matching username/password" else: "no matching password, or password is expired"
+      resp jsonResponse(%* {"error": error}, Http401)
       return
-    ctx.setCookie("session", sessionToken)
+    ctx.setCookie("session", sessionToken, maxAge=some(conf.sessionDuration()))
     resp "OK", Http200
   
   except:
@@ -82,12 +84,12 @@ proc registerUser(ctx: SessionContext) {.async.} =
     let password = credentials["password"].getStr()
     
     if username.len > 0 and password.len > 0:
-      let sessionToken = usersDb.registerOtpUser(sessionToken, username, password)
+      let sessionToken = usersDb.registerOtpUser(sessionToken, username, password, conf.sessionDuration)
       if sessionToken.len > 0:
-        ctx.setCookie("session", sessionToken)
+        ctx.setCookie("session", sessionToken, maxAge=some(conf.sessionDuration()))
         resp "OK"
       else:
-        resp jsonResponse(%* {"error": "session token is likely expired?"}, Http401)
+        resp jsonResponse(%* {"error": "this user is not able to register or session token is expired"}, Http401)
     else:
       resp jsonResponse(%* {"error": "invalid username or password"}, Http400)
   except:
@@ -329,7 +331,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
             try:
               let sessionToken = ctx.request.cookies["session"]
               echo "sessionToken = ",  sessionToken
-              let session = usersDb.sessionAuthorizationState(sessionToken)
+              let session = usersDb.sessionAuthorizationState(sessionToken, conf.sessionDuration)
               ctx.sessionState = session
               if (shouldRequireLogin and not session.isLoggedIn) or (shouldRequireAdmin and not session.isAdmin):
                 resp jsonResponse(%* {"error": "unauthorized"}, Http401)
