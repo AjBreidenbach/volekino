@@ -220,7 +220,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
     selected = newJsSet()
 
   mdiv(
-    a {class: "entry-list", style: entryListStyle},
+    a {class: "entry-list spacer", style: entryListStyle},
     (
       if shouldDisplayTable:
         mtable(

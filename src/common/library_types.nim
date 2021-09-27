@@ -30,6 +30,24 @@ type ConversionRequest* = object
   experimentalMode*: bool
   removeOriginal*: bool
 
+type DownloadRequest* = ref object
+  url*: StringImpl
+
+type DownloadHandle* = int
+
+type DownloadResource* {.pure.} = enum
+  Default = 0
+  
+type Download* = object
+  id*: int
+  resourceName*: StringImpl
+  resourceType*: DownloadResource
+  url*: StringImpl
+  progress*: int
+  status*: StringImpl
+# select (jobId, resourceName, resourceType, url, progress, status) from Downloads inner join Jobs on jobId = id where status = "started"
+
+
 type AudioTrackIdentifier* = object
   title*, lang*: StringImpl
   index*: int

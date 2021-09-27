@@ -2,7 +2,8 @@
 import mithril
 #import asyncjs
 import mithril/common_selectors
-import client/[jsffi, directory, convert, progress, wsdispatcher, login, user_menu, media, util]
+import client/[jsffi, util, wsdispatcher, store]
+import client/[directory, convert, progress, login, user_menu, media, addmedia]
 import common/library_types
 
 
@@ -48,7 +49,10 @@ SideNav.view = viewFn(MComponent):
       )
     ),
     #mimg(a {src: "/images/movie-camera.svg"}),
-    mimg(a {src: "/images/add.svg"}),
+    m(mrouteLink,
+      a {href: "/add"},
+      mimg(a {src: "/images/add.svg"})
+    ),
     mimg(a {src: "/images/settings.svg"})
   )
   
@@ -58,9 +62,11 @@ proc wrapPage(selector: MithrilSelector): MithrilSelector =
   view(wrapper):
     mchildren(
       mmain(
+        a {class: if popupEnabled: "popup-enabled" else: ""},
         m(selector)
       ),
-      SideNav
+      SideNav,
+      DownloadProgressPopupView
     )
 
 
@@ -79,7 +85,8 @@ block:
       "/progressbartest": toSelector TestProgressBar,
       "/login": wrapPage Login,
       "/register": wrapPage Registration,
-      "/user-menu": wrapPage UserMenu
+      "/user-menu": wrapPage UserMenu,
+      "/add": wrapPage AddMediaView
 
     }
   )

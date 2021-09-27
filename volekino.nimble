@@ -48,6 +48,8 @@ requires "https://github.com/AjBreidenbach/nim-mithril#9ef8edb"
 #requires "mithril" #development
 requires "https://github.com/guzba/zippy#14739c9"
 requires "https://github.com/stisa/jswebsockets#ff0ceec"
+requires "https://github.com/AjBreidenbach/nim-transmission-remote#aa2a025"
+#requires "transmission_remote" #development
 requires "nimcrypto"
 requires "websocketx >= 0.1.2"
 requires "cligen"

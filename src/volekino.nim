@@ -5,9 +5,10 @@ import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
 import volekino/[userdata, models, config, library, ffmpeg]
-import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users]
+import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
+import volekino/daemons/[httpd, transmissiond]
 import json
-from common/library_types import ConversionRequest
+from common/library_types import ConversionRequest, DownloadRequest
 import common/user_types
 import options
 import cligen
@@ -40,6 +41,35 @@ proc postUsers(ctx: SessionContext) {.async.} =
     resp jsonResponse(%* {"uid": uid}, Http200)
   except: resp jsonResponse(%* {"error": "could not parse create user request"}, Http400)
 
+proc getDownloads(ctx: SessionContext) {.async.} =
+  let downloads = downloadsDb.getDownloads()
+  resp jsonResponse(% downloads)
+
+
+proc runSync =
+  let command = getAppFilename()
+#proc main(api=true, apache=true, transmission=false, sync=true, printDataDir=false, populateUserData=true) =
+  let syncProcess = startProcess(command, args=["--apache=false", "--transmission=false", "--api=false", "--populateUserData=false"], options={poEchoCmd, poParentStreams, poDaemon})
+
+  addProcess(
+    syncProcess.processId,
+    proc(fd: AsyncFd): bool =
+      echo "sync process exited with ", $syncProcess.peekExitCode()
+      true
+  )
+
+
+proc postDownloads(ctx: SessionContext) {.async, gcsafe.} =
+  try:
+    let request = parseJson(ctx.request.body).to(DownloadRequest)
+    let jobId = await downloadsDb.createDownload(url=request.url)
+    jobId.addCompletionCallback runSync
+      
+    
+    resp jsonResponse(%* {"jobId": jobId})
+  except: resp jsonResponse(%* {"error": "could not parse settings change request"}, Http400)
+
+
 proc getSettings(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(% conf.getSettings())
 
@@ -54,7 +84,7 @@ proc postSettings(ctx: SessionContext) {.async, gcsafe.} =
 proc getAllUsers(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(% usersDb.getAllUsers())
 
-proc login(ctx: SessionContext) {.async.} =
+proc login(ctx: SessionContext) {.async, gcsafe.} =
   try:
     let credentials = parseJson(ctx.request.body)
     let username = credentials.getOrDefault("username").getStr()
@@ -68,7 +98,7 @@ proc login(ctx: SessionContext) {.async.} =
       let error = if username.len > 0: "no matching username/password" else: "no matching password, or password is expired"
       resp jsonResponse(%* {"error": error}, Http401)
       return
-    ctx.setCookie("session", sessionToken, maxAge=some(conf.sessionDuration()))
+    ctx.setCookie("session", sessionToken, path="/", maxAge=some(conf.sessionDuration()))
     resp "OK", Http200
   
   except:
@@ -76,7 +106,7 @@ proc login(ctx: SessionContext) {.async.} =
     echo getCurrentExceptionMsg()
     resp jsonResponse(%* {"error": "incomplete login request"}, Http400)
 
-proc registerUser(ctx: SessionContext) {.async.} =
+proc registerUser(ctx: SessionContext) {.async, gcsafe.} =
   try:
     let sessionToken = ctx.request.cookies["session"]
     let credentials = parseJson(ctx.request.body)
@@ -86,7 +116,7 @@ proc registerUser(ctx: SessionContext) {.async.} =
     if username.len > 0 and password.len > 0:
       let sessionToken = usersDb.registerOtpUser(sessionToken, username, password, conf.sessionDuration)
       if sessionToken.len > 0:
-        ctx.setCookie("session", sessionToken, maxAge=some(conf.sessionDuration()))
+        ctx.setCookie("session", sessionToken, path="/", maxAge=some(conf.sessionDuration()))
         resp "OK"
       else:
         resp jsonResponse(%* {"error": "this user is not able to register or session token is expired"}, Http401)
@@ -97,7 +127,7 @@ proc registerUser(ctx: SessionContext) {.async.} =
   
 
 proc logout(ctx: SessionContext) {.async.} =
-  ctx.setCookie("session", "")
+  ctx.setCookie("session", "", path="/")
 
 proc libraryBase(ctx: SessionContext) {.async.} =
   var entryUid = ""
@@ -257,7 +287,7 @@ proc startHttpd: Process =
     echo "starting httpd"
     result = startProcess(command, USER_DATA_DIR, args=["-d", USER_DATA_DIR, "-f", "httpd.conf"], options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=env)
 
-proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData=true) =
+proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=false, populateUserData=true) =
   if printDataDir:
     echo USER_DATA_DIR
     quit 0
@@ -282,6 +312,7 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
       except: discard
     
   initDb()
+  initTransmissionRemote()
   
   
 
@@ -292,12 +323,15 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     conf.syncMedia()
     conf.syncSubtitles()
 
-  var httpdProcess: Process
+  var httpdProcess, transmissionProcess: Process
   if apache:
-    httpdProcess = startHttpd()
+    httpdProcess = conf.startHttpd()
+  if transmission:
+    transmissionProcess = conf.startTransmissionD()
 
   let prologueSettings = prologue.newSettings(port = conf.port)
   
+  #[
   let httpdShutdown = initEvent(
     proc() {.closure, gcsafe.} =
       let pid = cint parseInt(strip readFile(USER_DATA_DIR / "httpd.pid"))
@@ -313,11 +347,21 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
       httpdProcess.close()
       
   )
+  ]#
 
   if api:
     var shutdown = newSeq[prologue.Event]()
     if apache:
-      shutdown.add httpdShutdown
+      shutdown.add initEvent(
+        proc {.gcsafe} =
+          shutdownHttpd(httpdProcess)
+      )
+
+    if transmission:
+      shutdown.add initEvent(
+        proc {.gcsafe.} =
+          shutdownTransmissionD(transmissionProcess)
+      )
 
     var app = prologue.newApp(prologueSettings, shutdown = shutdown)
     
@@ -391,6 +435,8 @@ proc main(api=true, apache=true, sync=true, printDataDir=false, populateUserData
     app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/convert", postConvert, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/login", login)
+    app.get("/downloads", getDownloads, middlewares= @[authenticateUser(requireLogin=requireAuth)])
+    app.post("/downloads", postDownloads, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/register", registerUser)
     app.post("/logout", logout)
     app.run(SessionContext)

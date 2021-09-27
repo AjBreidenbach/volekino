@@ -13,6 +13,7 @@ run npm i
 copy volekino.nimble ./
 run nimble install -dy
 copy userdata.nim ./
+copy default-settings.yml ./
 copy client client/
 copy scripts scripts/
 copy src src/
@@ -24,7 +25,7 @@ run nimble buildAll
 from ubuntu as dev
 run useradd volekino
 run apt-get update --fix-missing
-run DEBIAN_FRONTEND="noninteractive" apt-get install apache2 ffmpeg -y
+run DEBIAN_FRONTEND="noninteractive" apt-get install apache2 ffmpeg transmission-daemon -y
 workdir /home/volekino
 run chown volekino:volekino /home/volekino
 copy --from=build /root/dist/ ./dist

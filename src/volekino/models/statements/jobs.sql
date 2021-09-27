@@ -3,6 +3,7 @@ create table if not exists Jobs(
   id integer not null primary key autoincrement,
   progress integer,
   status varchar(32),
+  ts integer(4) not null default (strftime('%s','now')),
   error text
 )
 

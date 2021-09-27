@@ -2,6 +2,7 @@ import db_sqlite
 import sqlite3
 import strutils
 import options
+import tables
 
 import util
 
@@ -10,6 +11,11 @@ const SQL_STATEMENTS = statementsFrom("./statements/jobs.sql")
 type JobsDb* = distinct DbConn
 
 
+var completionCallbacks = initTable[int, proc():void]()
+
+proc addCompletionCallback*(jobId: int, cb: proc(): void) =
+  completionCallbacks[jobId] = cb
+  
 proc createTable*(db: DbConn): JobsDb =
   db.exec(sql SQL_STATEMENTS["create"])
   JobsDb(db)
@@ -25,6 +31,11 @@ proc createJob*(jdb: JobsDb): int =
 proc updateJob*(jdb: JobsDb, jobId: int, progress: int, status: string="started") =
   let db = DbConn(jdb)
   db.exec(sql SQL_STATEMENTS["update-job"], progress, status, jobId)
+  if status == "complete":
+    try:
+      completionCallbacks[jobId]()
+    except KeyError:
+      discard
   echo "updateJob ", jobId, status, progress
 
 

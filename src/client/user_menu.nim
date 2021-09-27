@@ -246,7 +246,7 @@ UserMenu.view = viewFn(UserMenuState):
     mrouteset(getPath())
 
   mdiv(
-    a {style: "margin: 1em"},
+    a {class: "spacer", style: "margin: 1em"},
     mul(
       a {style: "font-size: 1.2em"}, 
       block login:

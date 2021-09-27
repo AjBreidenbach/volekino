@@ -1,6 +1,18 @@
 import jsffi
 
 
+var popupEnabled* = false
+var `$shouldHidePopup` = localStorage[cstring"shouldHidePopup"] == cstring"1"
+
+proc shouldHidePopup*: bool = `$shouldHidePopup`
+proc hidePopup* =
+  `$shouldHidePopup` = true
+  localStorage[cstring"shouldHidePopup"] = cstring"1"
+proc showPopup* =
+  `$shouldHidePopup` = false
+  localStorage[cstring"shouldHidePopup"] = cstring"0"
+
+
 proc getCurrentTime*(uid: cstring): float =
   let record = localStorage[uid & cstring":currentTime"]
   result = parseFloat(record)

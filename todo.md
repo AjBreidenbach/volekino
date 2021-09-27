@@ -1,5 +1,6 @@
 ## client directory
 * ~~progress bar (indicating how much of video has been played through)~~
+* show directory breadcrumbs when a folder is highlighted
 
 ## converter
 * ~~indicate encoding that will be used when copy is selected~~

@@ -5,7 +5,7 @@ import config/default_settings
 import ../common/user_types
 import tables, json
 
-type VoleKinoConfig* = object
+type VoleKinoConfig* = ref object
   appSettings: AppSettings
   
 

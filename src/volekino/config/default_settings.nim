@@ -9,6 +9,7 @@ const SCRIPT_FILE = ".." / ".." / ".." /  "node_modules" / "yaml-cli" / "lib" / 
 const COMMAND = "node --no-warnings " & quoteShell(SCRIPT_FILE) & " write " & quoteShell(DEFAULTS_FILE)
 const DEFAULT_SETTINGS_JSON = gorge(COMMAND)
 
+echo DEFAULT_SETTINGS_JSON
 let defaultSettingsJson = parseJson DEFAULT_SETTINGS_JSON
 
 var defaultSettings = newSeq[AppSetting]()

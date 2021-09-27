@@ -39,6 +39,7 @@ nav img
   width: 3em
   padding: 0.5 0em
   height: auto
+  filter: invert(0.9)
 
 
 img.thumbnail-large
@@ -159,6 +160,23 @@ div.entry-list::-webkit-scrollbar-track
   background: #F0F0F0
   border-radius: 0px
   box-shadow: inset 0px 0px 0px 0px #F0F0F0
+
+::-webkit-scrollbar
+  width: 5px
+  height: 5px
+
+::-webkit-scrollbar-thumb
+  background: #B3AFB3
+  border-radius: 0px
+
+::-webkit-scrollbar-thumb:hover
+  background: #B3AFB3
+
+::-webkit-scrollbar-track
+  background: #F0F0F0
+  border-radius: 0px
+  box-shadow: inset 0px 0px 0px 0px #F0F0F0
+
 
 
 .flex-cell
@@ -384,3 +402,54 @@ input[type="submit"]
 .admin-settings td
   padding:0.5em
   
+div.downloads-popup
+  position: absolute
+  right: 3em
+  bottom: 0
+  background-color: white
+  z-index: 10
+  max-height: 200px
+  width: calc(600px + 2em)
+  padding: 1em 1em 1em 0
+  box-sizing: border-box
+  //border-width: 3px
+  //border-right-width: 0
+  //border-style: solid
+  border-color: #414141
+  box-shadow: 0px 0px 4px 0px #414141
+  overflow: none
+
+div.downloads-popup.collapsed
+  padding: 0
+  width: unset
+
+div.download-progress-indicator
+  font-size: 0.8em
+  padding: 0.5em 0
+  border-style: ridge
+  margin-left: 1em
+  border-width: 1px 0
+  margin-bottom: -1px
+  display: flex
+  justify-content: space-between
+
+img[src$=".svg"] 
+  filter: invert(0.9)
+
+
+main.popup-enabled .spacer::after
+  height: 200px
+  display: block
+  content: ""
+//
+  position: absolute;
+    bottom: 0;
+    right: 5;
+    z-index: 1;
+    background-color: white;
+    color: red;
+    /* filter: drop-shadow(1px 1px 1px white); */
+    border-radius: 100%;
+    width: 1.1em;
+    text-align: center;
+    height: 1.1em;
