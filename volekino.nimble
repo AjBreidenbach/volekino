@@ -41,6 +41,14 @@ task buildAll, "":
     exec "nimble buildFrontend"
     exec "nimble buildBackend"
 
+
+task buildDebian, "":
+  exec "nimble -d:release buildAll"
+  exec "cp dist/volekino debian/volekino_0.1.0_amd64/usr/bin/"
+  exec "dpkg-deb --build debian/volekino_0.1.0_amd64/"
+  #discard
+#task packageDeban
+
 requires "nim >= 1.4.8"
 requires "https://github.com/planety/prologue.git#05581bf"
 requires "https://github.com/MatthewScholefield/appdirs#3cbf5b4"

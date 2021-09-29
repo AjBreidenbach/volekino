@@ -12,6 +12,7 @@ type SettingsManagerState = ref object
   ready: bool
   settings: seq[AppSetting]
   initialSettings: cstring
+  allowRedraw: bool
   request: ApplySettingsRequest
 
 var SettingsManager = MComponent()
@@ -28,6 +29,11 @@ SettingsManager.oninit = lifecycleHook(SettingsManagerState):
   state.ready = false
   #state.request = @[]
   await state.refreshSettings()
+
+SettingsManager.onbeforeupdate = beforeUpdateHook:
+  result = old.state.allowRedraw.to(bool)
+  vnode.state.allowRedraw = false
+  
     
 SettingsManager.view = viewFn(SettingsManagerState):
   let commitChanges = eventHandlerAsync:
@@ -53,6 +59,7 @@ SettingsManager.view = viewFn(SettingsManagerState):
             closureScope:
               let setting = setting
               let onchange = eventHandler:
+                state.allowRedraw = true
                 #e.redraw = false
                 let newValue = cstring"" & (
                   if e.target["type"].to(cstring) == cstring"checkbox":
@@ -92,9 +99,9 @@ SettingsManager.view = viewFn(SettingsManagerState):
           mbutton(a {onclick: commitChanges}, "Commit changes"),
           mbutton(a {onclick: clear}, "Clear")
         )
-      else: nil
+      else: mchildren()
     )
-  else: nil
+  else: mchildren()
 
 type OTPUserGeneratorState = ref object
   allowAccountCreation, isAdmin: bool
@@ -112,27 +119,34 @@ OTPUserGenerator.oncreate = lifecycleHook(OTPUserGeneratorState):
   state.copyElement = vnode.dom.querySelector(".copyElement")
   #console.log(state.copyElement)
 
-proc setClipboard(state: OTPUserGeneratorState, value: cstring) =
-  #console.log(state)
-  state.copyElement.value = value
-  state.copyElement.select()
-  state.copyElement.setSelectionRange(0, 99999)
-  navigator.clipboard.writeText(state.copyElement.value)
-
-proc setStatus(state: var OTPUserGeneratorState, message: cstring, isError=false) =
+proc setStatus(state: var OTPUserGeneratorState, message: cstring, timeout=cint 5000, isError=false) =
   state.statusMessage = message
   state.isError = isError
   if not isError:
     discard setTimeout(
-      cint 5000,
+      timeout,
       proc =
         state.statusMessage = cstring""
         mredraw()
       
     )
+
 proc setErrorStatus(state: var OTPUserGeneratorState, message: cstring) =
-  state.setStatus(message, true)
-  
+  state.setStatus(message, isError=true)
+ 
+proc setClipboard(state: var OTPUserGeneratorState, value: cstring) =
+  #console.log(state)
+  if isTruthy navigator.clipboard:
+    state.copyElement.value = value
+    state.copyElement.select()
+    state.copyElement.setSelectionRange(0, 99999)
+    navigator.clipboard.writeText(state.copyElement.value)
+    state.setStatus cstring"Copied one-time password to clipboard"
+  else:
+    state.setStatus cstring"OTP is " & value, timeout=30000
+    
+
+ 
 OTPUserGenerator.view = viewFn(OTPUserGeneratorState):
   let onclickAccountCreation = eventHandler:
     state.allowAccountCreation = e.target.checked.to(bool)
@@ -148,12 +162,12 @@ OTPUserGenerator.view = viewFn(OTPUserGeneratorState):
       let response = await mrequest("/api/users/", Post, requestBody)
       let uid = response.uid.to(cstring)
       state.setClipboard(uid)
-      state.setStatus cstring"Copied one-time password to clipboard"
+      #state.setStatus cstring"Copied one-time password to clipboard"
     except:
       state.setErrorStatus getJsException().to(cstring)
     
   mdiv(
-    a {style: "width: 400px;"},
+    a {style: "width: 400px; margin: 2em 0;"},
     mh6("User creation"),
 
     mform(
@@ -261,7 +275,7 @@ UserMenu.view = viewFn(UserMenuState):
       ,
       block register:
         if state.isRegistered or not state.canRegister:
-          nil
+          mchildren()
         else:
           mli m(mrouteLink,
             a {href: "/register"}, "Register"
@@ -271,5 +285,5 @@ UserMenu.view = viewFn(UserMenuState):
       if state.isAdmin:
         m(AdminPanel)
       else:
-        nil
+        mchildren()
   )

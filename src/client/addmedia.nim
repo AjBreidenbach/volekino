@@ -16,9 +16,10 @@ var
 #TODO we can avoid redraws if the result hasn't changed
 proc refreshDownloads() {.async.} =
   try:
-    let newDownloads = (await mrequest("/api/downloads")).to(seq[Download])
+    let newDownloads = (await mrequest("/api/downloads", background=true)).to(seq[Download])
     if newDownloads == ongoingDownloads:
       timeoutDuration += 500
+      mredraw()
       
     else:
       timeoutDuration = 1000
@@ -52,7 +53,7 @@ DownloadProgressPopupView.view = viewFn:
   #echo "downloadProgressPopup"
   if ongoingDownloads.len == 0 or getPath() == cstring"/add":
     popupEnabled = false
-    return nil
+    return mchildren()
   
   popupEnabled = true
   mdiv(
