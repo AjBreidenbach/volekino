@@ -8,7 +8,8 @@ type Entry* = ref object of LibraryEntry
   #id*: int16
   #path*, videoEncoding*, audioEncoding*: cstring
   splits*: seq[cstring]
-  pathTail, pathHead: cstring
+  containingDirectory*: cstring
+  pathTail*, pathHead*: cstring
 
 proc initPathTail(e: Entry): cstring =
   e.splits[e.splits.high]
@@ -22,7 +23,10 @@ proc init*(e: var Entry) =
   e.splits = e.path.split(cstring "/")
   e.pathTail = initPathTail(e)
   e.pathHead = initPathHead(e)
-
+  var sliceEnd = e.path.rfind('/')
+  if sliceEnd == -1:
+    sliceEnd = 0
+  e.containingDirectory = e.path.slice(0, sliceEnd)
 
 
 var selected: JsSet = newJsSet()
@@ -155,9 +159,22 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
     
   )
 
+proc subdirectoryContainer*(children: var seq[VNode]): VNode =
+  if children.len == 0: return mchildren()
+  result = (
+    mdiv(
+      a {style: "overflow-x: auto; position:relative; height: 200px;"},
+      mdiv(
+        a {style: "display: flex; position: absolute;"},
+        children
+      )
+    )
+  )
+  children.setLen(0)
+
 converter toVNode*(entries: seq[Entry]): VNode =
   var entryNodes = newSeq[VNode]()
-  let entries = entries.sortedByIt(it.path)
+  #let entries = entries.sortedByIt(it.path)
 
   var searchPath = cstring""
   let query = getQuery()
@@ -170,11 +187,13 @@ converter toVNode*(entries: seq[Entry]): VNode =
   #TODO
   let shouldDisplayTable = query.hasOwnProperty(cstring"table")
     
+  var containingDirectory = cstring""
+  var flushContainerDirectory = false
+  var directoryChildren = newSeq[VNode]()
 
   var hiddenCount = 0
   for entry in entries:
-    if entry.uid in deleted:
-      continue
+    if entry.uid in deleted: continue
     let imageSource = cstring"/thumbnails/" & entry.uid.toJs.to(cstring)
     let pathToVideo = cstring"/library/" & entry.uid#encodeURI(entry.path).replace(newRegExp(r"\/", "g"), "%2F")
 
@@ -184,29 +203,53 @@ converter toVNode*(entries: seq[Entry]): VNode =
     if searchPath.len > 2 and not (searchPath in entry.path.toLowerCase()):
       class &= " hidden"
       inc hiddenCount
-        
 
-
-    var q = query
+       
+    var q = clone query
     q.search = entry.pathHead
     q.u = true
 
     let directoryPath = currentPath & mbuildQueryString(q)
     
+    if (not shouldDisplayTable) and isFalsey query.search:
+      if entry.containingDirectory != containingDirectory:
+        #flushContainerDirectory = true
 
+        entryNodes.add subdirectoryContainer(directoryChildren)
+
+        if entry.containingDirectory.len > 0:
+          entryNodes.add(
+            m(mrouteLink,
+              a {href: directoryPath},
+              mh2(
+                a {style: "display: flex; align-items: center; margin: 1em 1em 0 1em; font-size: 1.4em; font-weight: 400;"},
+                entry.containingDirectory,
+                mimg(a {src:"/images/open-folder.svg"})
+              )
+            )
+          )
+        else: entryNodes.add mbr()
+        containingDirectory = entry.containingDirectory
+     
+      
     entryNodes.add (
-
       if shouldDisplayTable:
         toTableRowView(
           entry, class, imageSource, pathToVideo, directoryPath
         )
-        
+      elif entry.containingDirectory.len > 0 and isFalsey query.search:
+        directoryChildren.add toThumbnailView(
+          entry, class, imageSource, pathToVideo, directoryPath
+        )
+        nil
       else:
         toThumbnailView(
           entry, class, imageSource, pathToVideo, directoryPath
         )
 
     )
+  if directoryChildren.len > 0:
+    entryNodes.add subdirectoryContainer(directoryChildren)
 
   let entryListStyle = if shouldDisplayTable: "" else: "justify-content: space-between"
 

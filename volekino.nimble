@@ -52,7 +52,7 @@ task buildDebian, "":
 requires "nim >= 1.4.8"
 requires "https://github.com/planety/prologue.git#05581bf"
 requires "https://github.com/MatthewScholefield/appdirs#3cbf5b4"
-requires "https://github.com/AjBreidenbach/nim-mithril#9ef8edb"
+requires "https://github.com/AjBreidenbach/nim-mithril#141d4ec"
 #requires "mithril" #development
 requires "https://github.com/guzba/zippy#14739c9"
 requires "https://github.com/stisa/jswebsockets#ff0ceec"

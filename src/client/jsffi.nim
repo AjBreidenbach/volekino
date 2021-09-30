@@ -28,6 +28,14 @@ proc setTimeout*(timeoutDuration: cint, timeoutFunction: TimeoutFunction | Async
   setTimeout(timeoutFunction, timeoutDuration)
   
 proc clearTimeout*(timeoutHandle: cint) {.importc.}
+proc slice*(s:cstring,i:cint):cstring {.importcpp.}
+proc slice*(s:cstring,i,j:cint):cstring {.importcpp.}
+converter toCstring(c: char): cstring {.importc: "String.fromCharCode".}
+proc rfind*(s:cstring,c:cstring): cint {.importcpp: "lastIndexOf".}
+proc rfind*(s:cstring,c:char): cint = rfind(s,cstring c)
+proc localeCompare*(s1,s2:cstring):int {.importcpp.}
+proc sort*[T](a: var openArray[T], cmp: proc (x, y: T): int) {.importcpp.}
+
 
 var JSON* {.importc.} : JsObject
 proc parseFloat*(s: cstring): float {.importc.}
@@ -66,6 +74,7 @@ proc excl*(s1: var JsSet, s2: JsSet) =
         s1.assoc[key] = false
 
 
+proc clone*(o: JsObject):JsObject {.importcpp: "Object.assign({}, @)".}
 proc excl*(s1: var JsSet, key: cstring) =
   if s1.assoc[key]:
     dec s1

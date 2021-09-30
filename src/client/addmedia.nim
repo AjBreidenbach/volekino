@@ -19,11 +19,10 @@ proc refreshDownloads() {.async.} =
     let newDownloads = (await mrequest("/api/downloads", background=true)).to(seq[Download])
     if newDownloads == ongoingDownloads:
       timeoutDuration += 500
-      mredraw()
-      
     else:
       timeoutDuration = 1000
       ongoingDownloads = newDownloads
+      mredraw()
     #console.log(cstring"ongoingDownloads: ", ongoingDownloads)
   except:
     couldNotFetch = true
