@@ -10,7 +10,7 @@ import volekino/daemons/[httpd, transmissiond]
 import json
 from common/library_types import ConversionRequest, DownloadRequest
 import common/user_types
-import options
+import options, times, terminal
 import cligen
 
 
@@ -24,7 +24,6 @@ when defined(windows):
 else:
   import posix
 
-const INDEX_HTML = slurp("../dist/index.html")
 
 proc userGetSelf(ctx: SessionContext) {.async, gcsafe.} =
   let user = usersDb.getUser(ctx.sessionState)
@@ -279,26 +278,52 @@ proc httpdExecutable: string =
     if result.len > 0: break
 
 
+proc shouldWriteIndex(): bool =
+  let indexPath = staticDir / "index.html"
+  if fileExists(indexPath):
+    let info = getFileInfo(indexPath, followSymlink = false)
 
+    if info.kind != pcLinkToFile:
+      let binLastWrite = getFileInfo(getAppFilename()).lastWriteTime
+      result = binLastWrite > info.lastWriteTime
+  else: result = true
+
+proc writeIndex() =
+  const INDEX_HTML = slurp("../dist/index.html")
+  when defined(release):
+    writeFile(staticDir / "index.html", INDEX_HTML)
+  else:
+    try:
+      removeFile(staticDir / "index.html")
+      if getAppDir().endsWith "dist":
+        createSymLink(getAppDir()  / "index.html", staticDir / "index.html")
+      else:
+        createSymLink(getAppDir() / "dist" / "index.html", staticDir / "index.html")
+    except: discard
+
+
+#[
 proc startHttpd: Process =
   let env = newStringTable({"USER": getEnv("USER"), "USER_DATA_DIR": USER_DATA_DIR, "APACHE_MODULES_DIR": "/usr/lib/apache2/modules/"})
   let command = httpdExecutable()
   if command.len > 0:
     echo "starting httpd"
     result = startProcess(command, USER_DATA_DIR, args=["-d", USER_DATA_DIR, "-f", "httpd.conf"], options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=env)
+    ]#
 
 proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=false, populateUserData=true) =
   if printDataDir:
     echo USER_DATA_DIR
     quit 0
-  echo "running with ", commandLineParams()
+  styledecho fgRed, "running with ", $ commandLineParams()
   #createDir(staticDir)
   #createDir(USER_DATA_DIR / "logs")
 
   if populateUserData:
     userdata.populateFromZip()
 
-  #when(defined(release)):
+
+  #[
   if not fileExists(staticDir / "index.html"):
     createDir(staticDir)
     when defined(release):
@@ -310,11 +335,11 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
         else:
           createSymLink(getAppDir() / "dist" / "index.html", staticDir / "index.html")
       except: discard
+  ]#
+  if shouldWriteIndex():
+    writeIndex()
     
   initDb()
-  initTransmissionRemote()
-  
-  
 
   conf = loadConfig(appSettings)
 
@@ -327,27 +352,10 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
   if apache:
     httpdProcess = conf.startHttpd()
   if transmission:
+    initTransmissionRemote()
     transmissionProcess = conf.startTransmissionD()
 
   let prologueSettings = prologue.newSettings(port = conf.port)
-  
-  #[
-  let httpdShutdown = initEvent(
-    proc() {.closure, gcsafe.} =
-      let pid = cint parseInt(strip readFile(USER_DATA_DIR / "httpd.pid"))
-      when defined(windows):
-        #TODO kill apache
-        echo "not killing apache on windows???"
-      else:
-        let status = kill(pid, SIGTERM)
-        echo "terminate apache ", $status
-        
-      httpdProcess.terminate()
-      echo "httpd exit status ", httpdProcess.waitForExit()
-      httpdProcess.close()
-      
-  )
-  ]#
 
   if api:
     var shutdown = newSeq[prologue.Event]()
@@ -417,7 +425,7 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
 
     if usersDb.registeredCount == 0:
       let otp = usersDb.createOtpUser(allowAccountCreation=true, isAdmin=true)
-      echo "One time password: ", otp
+      styledecho fgYellow, styleBright, "One time password: ", otp
 
     var library = app.newGroup("/library", middlewares= @[authenticateUser(requireLogin=requireAuth)])
     library.get("/", libraryBase)
