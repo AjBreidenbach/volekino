@@ -21,8 +21,10 @@ else:
     createDir(tmpDir)
     let archive = ZipArchive()
     archive.open(outputStream)
+    #[
     for key in archive.contents.keys():
       echo key
+    ]#
     try:
       archive.extractAll(tmpDir / "userdata")
     except:

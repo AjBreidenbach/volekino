@@ -18,7 +18,7 @@ import strformat
 proc getProperty*(db: AppSettings, key: string): string =
   const statement = slurp("./statements/appsettings/get.sql")
   result = DbConn(db).getValue(sql statement, key)
-  echo &"get ({key}) = {result}"
+  #echo &"get ({key}) = {result}"
 
 
 proc getAllProperties*(db: AppSettings): TableRef[string,string]=

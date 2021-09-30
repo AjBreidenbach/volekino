@@ -1,4 +1,4 @@
-import appdirs, os
+import appdirs, os, osproc, asyncdispatch
 import transmission_remote
 
 let 
@@ -21,6 +21,24 @@ let
 var mediaDirCreated*, libraryDirCreated*, thumbnailDirCreated*, subtitleDirCreated* = false
 
 var transmission*: TransmissionRemote
+
+
+var syncing* = true
+proc runSync* =
+  syncing = true
+  let command = getAppFilename()
+  echo "syncCommand = ", command
+#proc main(api=true, apache=true, transmission=false, sync=true, printDataDir=false, populateUserData=true) =
+  let syncProcess = startProcess(command, args=["--syncOnly=true"], options={poEchoCmd, poParentStreams, poDaemon})
+
+  addProcess(
+    syncProcess.processId,
+    proc(fd: AsyncFd): bool =
+      echo "sync process exited with ", $syncProcess.peekExitCode()
+      syncing = false
+      true
+  )
+
 
 proc initTransmissionRemote* =
   transmission = newTransmissionRemote(port=9092)

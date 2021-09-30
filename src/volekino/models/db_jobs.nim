@@ -26,7 +26,7 @@ proc createJob*(jdb: JobsDb): int =
   db.exec(sql SQL_STATEMENTS["create-job"])
 
   result = int db.last_insert_row_id
-  echo "createJob ", result
+  #echo "createJob ", result
 
 proc updateJob*(jdb: JobsDb, jobId: int, progress: int, status: string="started") =
   let db = DbConn(jdb)
@@ -36,13 +36,13 @@ proc updateJob*(jdb: JobsDb, jobId: int, progress: int, status: string="started"
       completionCallbacks[jobId]()
     except KeyError:
       discard
-  echo "updateJob ", jobId, status, progress
+  #echo "updateJob ", jobId, status, progress
 
 
 proc errorJob*(jdb: JobsDb, jobId: int, status="error", error="") =
   let db = DbConn(jdb)
   db.exec(sql SQL_STATEMENTS["error"], status, error, jobId)
-  echo "errorJob ", jobId, status, error
+  #echo "errorJob ", jobId, status, error
 
 type JobStatus* = object
   progress*: int

@@ -1,4 +1,4 @@
-import db_sqlite
+import db_sqlite, os, globals
 from models/db_appsettings import nil
 from models/db_library import nil
 from models/db_jobs import nil
@@ -20,14 +20,23 @@ var downloadsDb*: db_downloads.DownloadDb
 
 proc createTables*(db: DbConn) =
   appSettings = db_appsettings.createTable(db)
-  libraryDb = db_library.createTable(db)
   jobsDb = db_jobs.createTable(db)
-  subtitlesDb = db_subtitles.createTable(db)
+  #libraryDb = db_library.createTable(db)
+  #subtitlesDb = db_subtitles.createTable(db)
   downloadsDb = db_downloads.createTable(db)
   usersDb = db_users.createUserTables(db)
-  #thumbnailsDb = db_thumbnails.createTable(db)
-  echo "tables created"
 
+proc createMediaTables*(db: DbConn) =
+  libraryDb = db_library.createTable(db)
+  subtitlesDb = db_subtitles.createTable(db)
+
+proc initDb*(path: string): tuple[defaultConn, mediaConn: DbConn] =
+  result[0] = open(USER_DATA_DIR / "volekino.db", "", "", "")
+  result[1] = open(USER_DATA_DIR / "volekino_m.db", "", "", "")
+
+  createTables(result[0])
+  createMediaTables(result[0])
+  
 template initTestDb*: untyped =
   import os
 

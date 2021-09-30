@@ -1,5 +1,5 @@
 import volekino/globals
-import asyncdispatch, os, db_sqlite, strutils, json, re, osproc#, asyncfile
+import asyncdispatch, os, db_sqlite, sqlite3, strutils, json, re, osproc#, asyncfile
 from uri import nil
 import prologue except newSettings, newApp
 import prologue/websocket
@@ -45,10 +45,12 @@ proc getDownloads(ctx: SessionContext) {.async.} =
   resp jsonResponse(% downloads)
 
 
+#[
 proc runSync =
   let command = getAppFilename()
+  echo "syncCommand = ", command
 #proc main(api=true, apache=true, transmission=false, sync=true, printDataDir=false, populateUserData=true) =
-  let syncProcess = startProcess(command, args=["--apache=false", "--transmission=false", "--api=false", "--populateUserData=false"], options={poEchoCmd, poParentStreams, poDaemon})
+  let syncProcess = startProcess(command, args=["--syncOnly=true"], options={poEchoCmd, poParentStreams, poDaemon})
 
   addProcess(
     syncProcess.processId,
@@ -56,7 +58,7 @@ proc runSync =
       echo "sync process exited with ", $syncProcess.peekExitCode()
       true
   )
-
+]#
 
 proc postDownloads(ctx: SessionContext) {.async, gcsafe.} =
   try:
@@ -101,8 +103,6 @@ proc login(ctx: SessionContext) {.async, gcsafe.} =
     resp "OK", Http200
   
   except:
-    #echo getCurrentException()[]
-    echo getCurrentExceptionMsg()
     resp jsonResponse(%* {"error": "incomplete login request"}, Http400)
 
 proc registerUser(ctx: SessionContext) {.async, gcsafe.} =
@@ -267,10 +267,12 @@ proc connectWebSocket(ctx: SessionContext) {.async, gcsafe.} =
 
   resp "OK"
 
-proc initDb() =
-  let db = open(globals.dbPath, "", "", "")
-  createTables(db)
+#[
+proc initDb(): DbConn =
+  result = open(globals.dbPath, "", "", "")
+  createTables(result)
   
+]#
 
 proc httpdExecutable: string =
   for exeName in ["httpd", "apache2"]:
@@ -311,17 +313,48 @@ proc startHttpd: Process =
     result = startProcess(command, USER_DATA_DIR, args=["-d", USER_DATA_DIR, "-f", "httpd.conf"], options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=env)
     ]#
 
-proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=false, populateUserData=true) =
-  if printDataDir:
+proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=false, populateUserData=true, syncOnly=false) =
+  if printDataDir and not syncOnly:
     echo USER_DATA_DIR
     quit 0
   styledecho fgRed, "running with ", $ commandLineParams()
   #createDir(staticDir)
   #createDir(USER_DATA_DIR / "logs")
 
+
   if populateUserData:
     userdata.populateFromZip()
 
+
+
+  if syncOnly:
+    echo "syncing... this may take a while"
+    var 
+      dbConn: DbConn
+      exitStatus = 0
+    while true:
+      echo "trying sync"
+      try:
+        dbConn = initDb(USER_DATA_DIR)[1]
+        conf = loadConfig(appSettings)
+        conf.syncMedia()
+        conf.syncSubtitles()
+        exitStatus = 0
+      except DbError:
+        echo getCurrentExceptionMsg()
+        #echo "here ", PSqlite3(dbConn).errcode()
+        exitStatus = PSqlite3(dbConn).errcode()
+
+      if exitStatus != 7: break
+      sleep 1000
+        
+    quit exitStatus
+
+  else:
+    discard initDb(USER_DATA_DIR)
+    conf = loadConfig(appSettings)
+
+  
 
   #[
   if not fileExists(staticDir / "index.html"):
@@ -339,14 +372,6 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
   if shouldWriteIndex():
     writeIndex()
     
-  initDb()
-
-  conf = loadConfig(appSettings)
-
-  if sync:
-    echo "syncing... this may take a while"
-    conf.syncMedia()
-    conf.syncSubtitles()
 
   var httpdProcess, transmissionProcess: Process
   if apache:
@@ -356,6 +381,7 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
     transmissionProcess = conf.startTransmissionD()
 
   let prologueSettings = prologue.newSettings(port = conf.port)
+
 
   if api:
     var shutdown = newSeq[prologue.Event]()
@@ -373,7 +399,6 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
 
     var app = prologue.newApp(prologueSettings, shutdown = shutdown)
     
-    #if conf.requireAuth():
     template authenticateUser(requireAdmin=false, requireLogin=false): HandlerAsync {.dirty.}=
       block:
         proc factory: HandlerAsync =
@@ -382,7 +407,7 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
             let shouldRequireLogin = requireLogin
             try:
               let sessionToken = ctx.request.cookies["session"]
-              echo "sessionToken = ",  sessionToken
+              #echo "sessionToken = ",  sessionToken
               let session = usersDb.sessionAuthorizationState(sessionToken, conf.sessionDuration)
               ctx.sessionState = session
               if (shouldRequireLogin and not session.isLoggedIn) or (shouldRequireAdmin and not session.isAdmin):
@@ -398,29 +423,7 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
 
         factory()
         
-    #[
-      this causes a codegen error
-    proc authenticateUser(requireAdmin=false, requireLogin=false): HandlerAsync = (
-      proc (ctx: SessionContext) {.async, gcsafe.} =
-        try:
-          let sessionToken = ctx.request.cookies["session"]
-          echo "sessionToken = ",  sessionToken
-          let session = usersDb.sessionAuthorizationState(sessionToken)
-          ctx.sessionState = session
-          if (requireLogin and not session.isLoggedIn) or (requireAdmin and not session.isAdmin):
-            resp jsonResponse(%* {"error": "unauthorized"}, Http401)
-          else:
-            await switch(ctx)
-        except KeyError:
-          if requireLogin or requireAdmin:
-            resp jsonResponse(%* {"error": "unauthorized"}, Http401)
-          else:
-            ctx.sessionState = EMPTY_SESSION
-            await switch(ctx)
-
-    )
-    ]#
-      #app.use(authenticateUser())
+        #app.use(authenticateUser())
     let requireAuth = conf.requireAuth()
 
     if usersDb.registeredCount == 0:
@@ -447,7 +450,11 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
     app.post("/downloads", postDownloads, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/register", registerUser)
     app.post("/logout", logout)
+    if sync:
+      runSync()
     app.run(SessionContext)
 
-
+  if sync:
+    runSync()
+  
 dispatch(main)
