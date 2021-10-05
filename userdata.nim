@@ -5,7 +5,7 @@ import tables
 
 let whiteList = @[
   #re"((images(/.*)?)|static|media|library|logs|subtitles|thumbnails|\.htaccess|\.conf)$",
-  re"((images/.*)|static/|media/|library/|logs/|subtitles/|thumbnails/|\.htaccess|\.conf|\.types)$",
+  re"((images/.*)|(fonts/.*)|static/|media/|library/|logs/|subtitles/|thumbnails/|\.htaccess|\.conf|\.types)$",
 ]
 
 proc whitelisted(path: string): bool =

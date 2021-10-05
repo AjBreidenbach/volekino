@@ -222,7 +222,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
             m(mrouteLink,
               a {href: directoryPath},
               mh2(
-                a {style: "display: flex; align-items: center; margin: 1em 1em 0 1em; font-size: 1.4em; font-weight: 400;"},
+                a {style: "display: flex; align-items: center; margin: 1em 1em 0 1em; font-size: 1.3em; font-weight: 400;"},
                 entry.containingDirectory,
                 mimg(a {src:"/images/open-folder.svg"})
               )
