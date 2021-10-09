@@ -47,6 +47,11 @@ task buildDebian, "":
   exec "cp dist/volekino debian/volekino_0.1.0_amd64/usr/bin/"
   exec "dpkg-deb --build debian/volekino_0.1.0_amd64/"
   #discard
+task buildDebianArm, "":
+  exec "nimble -d:release buildAll"
+  exec "cp dist/volekino debian/volekino_0.1.0_arm64/usr/bin/"
+  exec "dpkg-deb --build debian/volekino_0.1.0_arm64/"
+
 #task packageDeban
 
 requires "nim >= 1.4.8"
