@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=VoleKino
+Icon=volekino
+GenericName=Media Server
+StartupWMClass=volekino
+Exec=/usr/bin/volekino --gui=on
+Type=Application
+Categories=Network;
+Path=
+X-Desktop-File-Install-Version=0.24

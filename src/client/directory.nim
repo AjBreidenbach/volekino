@@ -54,7 +54,8 @@ var BreadCrumbs = MComponent()
 BreadCrumbs.view = viewFn:
   var query = getQuery()
   let search = query.search.to(cstring)
-  if not (search in subdirectories):
+  #console.log(search)
+  if (isFalsey search) or not (cstring"/" in search):
     return mchildren()
   discard jsDelete query.search
   
@@ -66,11 +67,13 @@ BreadCrumbs.view = viewFn:
 
     block:
       var children = newSeq[VNode]()
-      var path = cstring""
-      let pathComponents = search.split(cstring"/")
+      var path = cstring"/?search="
+      var pathComponents = search.split(cstring"/")
+      if pathComponents[^1].len == 0:
+        discard pathComponents.pop()
       for (i, pathComponent) in pathComponents.pairs():
         #echo "pair ", i
-        path &= pathComponent
+        path &= (pathComponent & cstring"%2F")
         if i != pathComponents.high:
           children.add m(mrouteLink, a {href: path}, cstring"/" & pathComponent)
         else: children.add(mspan(cstring"/" & pathComponent))

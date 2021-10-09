@@ -57,6 +57,8 @@ requires "https://github.com/AjBreidenbach/nim-mithril#141d4ec"
 requires "https://github.com/guzba/zippy#14739c9"
 requires "https://github.com/stisa/jswebsockets#ff0ceec"
 requires "https://github.com/AjBreidenbach/nim-transmission-remote#aa2a025"
+requires "https://github.com/oskca/webview#head"
+requires "psutil"
 #requires "transmission_remote" #development
 requires "nimcrypto"
 requires "websocketx >= 0.1.2"

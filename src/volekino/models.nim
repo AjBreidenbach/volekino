@@ -35,7 +35,7 @@ proc initDb*(path: string): tuple[defaultConn, mediaConn: DbConn] =
   result[1] = open(USER_DATA_DIR / "volekino_m.db", "", "", "")
 
   createTables(result[0])
-  createMediaTables(result[0])
+  createMediaTables(result[1])
   
 template initTestDb*: untyped =
   import os

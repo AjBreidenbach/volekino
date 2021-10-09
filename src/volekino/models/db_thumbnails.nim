@@ -49,7 +49,7 @@ proc toFfmpegTimestamp(t: int): string =
 
 proc generateThumbnailImage(filename: string, destFile: string, time: int): int =
   let ffmpegTimestamp = toFfmpegTimestamp(time)
-  let command = &"{ffmpeg} -y -ss {ffmpegTimestamp} -i {quoteShell(filename)} -vf scale=384:216:force_original_aspect_ratio=decrease -vframes 1 -f image2 {quoteShell(destFile)}"
+  let command = &"{ffmpeg} -y -ss {ffmpegTimestamp} -i {quoteShell(filename)} -vf scale=384:216:force_original_aspect_ratio=decrease -vframes 1 -f image2 -q:v 31 {quoteShell(destFile)}"
   echo "command: ", command
   let ffmpegResult = execCmdEx(command)
   result = ffmpegResult.exitCode

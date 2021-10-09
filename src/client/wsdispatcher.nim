@@ -26,7 +26,12 @@ type PlayEvent* = object
 
 
 type PauseEvent* = PlayEvent
-var ws = newWebSocket("ws://" & location.host.to(cstring) & "/ws")
+var ws = newWebSocket(
+  (
+    if location.protocol.to(cstring) == "http:": "ws://" 
+    else: "wss://"
+  ) & location.host.to(cstring) & "/ws"
+  )
 
 proc sendEvent*[T](eventName: cstring, detail: T) =
   var e = newJsObject()

@@ -1,9 +1,12 @@
-$background_secondary: #414141
+//$background_secondary: #414141
+$background_secondary: #8ed9ea
+
 $background_primary: #ffffff
 
 body
   margin: 0px
-  background-color: $background_secondary
+  //background-color: $background_secondary
+  font-size: 18px
   font-family: Roboto
 
 h1
@@ -32,15 +35,17 @@ nav
   width: 3em
   display: inline-flex
   flex-direction: column
-  align-self: center
+  justify-content: center
+  height: 100%
   align-items: flex-end
+  background: $background_secondary
 
 
 nav img
   width: 3em
   padding: 0.5 0em
   height: auto
-  filter: invert(0.9)
+  //filter: invert(0.9)
 
 
 img.thumbnail-large
@@ -117,6 +122,11 @@ div.entry-list
   overflow: auto
   background-color: $background_primary
 
+div.entry-list:before
+  margin-top: 3em
+  content: ""
+  display: block
+
 //div.entry-list::after
   content: ""
   margin: 8px
@@ -124,11 +134,16 @@ div.entry-list
 
 div.entry-list table
   position: relative
+  margin: auto
   //table-layout: fixed
   //width: 100%
+
+div.entry-list th:nth-child(3)
+  text-align: left
   
-div.entry-list tbody
-  font-size: 0.8em
+div.entry-list td:nth-child(4)
+  font-size: 0.9em
+  text-align: left
 
 
 div.entry-list::-webkit-scrollbar
@@ -178,9 +193,12 @@ div.entry-list::-webkit-scrollbar-track
 
 thead
   position: sticky
-  top:0
+  top:-1px
   z-index: 1
   background-color: white
+
+thead th
+  font-size: 1.2em
 
 .hidden
   display: none !important
@@ -190,25 +208,36 @@ div.directory-top
   width: 100%
   justify-content: center
   display: flex
+  //margin: 3em 0 0 0
   padding: 0.5em
-  background-color: #414141
+  //background-color: #414141
 
 
 div.search-container
   font-size: 0.8em
   position: relative
 
-input[type="search"] 
-  padding: 0.5em
-  font-size: 1.25em
-  padding-left: 2em
-  border-radius: 1em
-  outline-width: 0
 
+input
+  font-family: 'Roboto'
+
+
+input[type="search"], input[type="text"], input[type="password"], input[type="number"], input[type="url"]
+  padding: 0.5em
+  font-size: 1em
+  background-color: #f0f0f0
+  outline-width: 0
+  border-style: none
+
+input[type="search"]
+  padding: 0.75em !important
+  padding-left: 2.5em !important
+  width: 300px
 
 img[src="/images/search.svg"]
   top: 0.5em
-  width: 2.5em
+  left: 0.75em
+  width: 1.5em
   position: absolute
 
 img[src="/images/open-folder.svg"]
@@ -315,26 +344,29 @@ progress
 div.progress-bar-container
   border-radius: 5em
   overflow: hidden
-  height: 1em
+  height: 0.6em
   position: relative
   width: 300px
 
 div.progress-bar-inner
-  box-sizing: border-box
-  background-color: #efefef
-  border-width: 1px
-  border-style: solid
-  border-color: #c2c2c2
-  border-radius: 5em
+  //box-sizing: border-box
+  background-color: #c4c4c4
+  //border-width: 1px
+  //border-style: solid
+  //border-color: #c2c2c2
+  //border-radius: 5em
   height: 100%
 
 div.progress-bar-value
   transition: width 2s
-  background-color: #0075ff
+  background-color: #6298e8
   height: 100%
   position: absolute
   left: 0
   top: 0
+
+h1, h2, h3, h4, h5, h6
+  text-align: center
 
 ::-webkit-progress-bar
   background-color: #efefef
@@ -345,17 +377,33 @@ div.progress-bar-value
   overflow: hidden
   /* height: 1.5em; */
 
+div.login-form
+  background-color: white
+  width: 400px
+  box-shadow: 0 2px 8px grey
+
+div.login-form form
+  margin:0 auto
+
+div.login-form h5
+  margin-block-end: 0
+
+div.login-form input
+  margin: 1em
 
 div.form-wrapper
-  background-color: white
+  //background-color: white
   display: flex
+  height: 100%
+  background-color: #8ed9ea
   justify-content: center
   flex-direction: column
+  align-items: center
 
 form
   flex-direction: column
   display: flex
-  width: 400px
+  width: min(100%, 400px)
   margin: 1em auto
 
 form > label
@@ -365,6 +413,15 @@ form > label
 
 input[type="submit"]
   margin: 0.5em
+
+input[type="submit"], button
+  max-width: 160px
+  height: 2.1em
+  background-color: #8ed9ea
+  border-style: none
+  font-size: 0.9em
+  font-weight: bold
+  filter: drop-shadow(0px 5px 2px #bbb)
 
 @media only screen and (max-width: 600px)
   #mount
@@ -391,13 +448,13 @@ input[type="submit"]
   
 div.downloads-popup
   position: absolute
-  right: 3em
+  right: 4em
   bottom: 0
   background-color: white
   z-index: 10
   max-height: 200px
   width: calc(600px + 2em)
-  padding: 1em 1em 1em 0
+  padding: 0.25em
   box-sizing: border-box
   //border-width: 3px
   //border-right-width: 0
@@ -406,22 +463,32 @@ div.downloads-popup
   box-shadow: 0px 0px 4px 0px #414141
   overflow: none
 
+div.downloads-popup:before
+    content: ""
+    display: block
+    height: 2em
+
 div.downloads-popup.collapsed
   padding: 0
-  width: unset
+  width: 2em
 
 div.download-progress-indicator
   font-size: 0.8em
   padding: 0.5em 0
-  border-style: ridge
-  margin-left: 1em
-  border-width: 1px 0
-  margin-bottom: -1px
+  //border-style: ridge
+  //margin-left: 1em
+  //border-width: 1px 0
+  flex-wrap: wrap
+  margin: 0 auto -1px auto
   display: flex
   justify-content: space-between
 
-img[src$=".svg"] 
-  filter: invert(0.9)
+@media only screen and (max-width: 600px)
+  div.download-progress-indicator
+    justify-content: center
+  
+//img[src$=".svg"] 
+  //filter: invert(0.9)
 
 
 main.popup-enabled .spacer::after

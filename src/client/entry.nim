@@ -73,8 +73,8 @@ proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPat
         mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource, onerror: onSourcelessImage}),
         mdiv(
           a {class: "title"},
-          entry.pathTail,
-          (
+          entry.pathTail#,
+          #[(
             if entry.pathHead.len > 0:
               m(mrouteLink,
                 a {href: directoryPath},
@@ -83,6 +83,7 @@ proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPat
             else:
               mchildren()
           )
+          ]#
         ),
         mdiv(
           a {class: "video-duration"},
@@ -134,11 +135,11 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
 
     a {class: class},
     mtd(
-      mimg(a {src: (if entry.uid in selected: "/images/circle.svg" else:"/images/hollow-circle.svg"), style: "width: 1.5em; padding: 0.25em", onclick: toggleSelect})
+      mimg(a {src: (if entry.uid in selected: "/images/circle.svg" else:"/images/hollow-circle.svg"), style: "    width: 2em; padding: 0.5em; box-sizing: border-box;", onclick: toggleSelect})
     ),
     mtd(
       m(mrouteLink, a {href: pathToVideo, class: "flex-cell"},
-        mimg(a {class: "thumbnail-tiny", src: imageSource, onerror: onSourcelessImage}),
+        mimg(a {loading: "lazy", class: "thumbnail-tiny", src: imageSource, onerror: onSourcelessImage}),
         entry.pathTail
       )
     ),
@@ -163,7 +164,7 @@ proc subdirectoryContainer*(children: var seq[VNode]): VNode =
   if children.len == 0: return mchildren()
   result = (
     mdiv(
-      a {style: "overflow-x: auto; position:relative; height: 200px;"},
+      a {style: "overflow-x: auto; overflow-y: hidden; position:relative; height: 200px;"},
       mdiv(
         a {style: "display: flex; position: absolute;"},
         children
@@ -270,6 +271,28 @@ converter toVNode*(entries: seq[Entry]): VNode =
           mthead(
             mtr(
               a {style: "height: 3em"},
+              mchildren(
+                mth(
+                  a {colspan: 2, style: "position: relative"},
+                  (
+                    if selected.len > 0:
+                      mdiv(
+                        a {style: "font-size: 0.5em; position: absolute;", class: "table-view-context-menu"},
+                        mimg(a {src: "/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
+                        mimg(a {class: "disabled", src: "/images/exchange.svg", style: "width: 2.5em"}),
+                        mimg(a {src: "/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
+                      )
+                    else: mchildren()
+                  ),
+                  "Media"
+                ),
+                mth("Directory"),
+                mth(mspan(a {class: "flex-cell"}, "Encoding"))
+              )
+            )
+            #[
+            mtr(
+              a {style: "height: 3em"},
               if selected.len == 0:
                 mchildren(
                   mth(""),
@@ -288,6 +311,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
                   )
                 )
             )
+            ]#
           ),
           mtbody(
             entryNodes

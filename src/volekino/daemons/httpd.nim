@@ -16,7 +16,6 @@ proc startHttpd*(conf: VoleKinoConfig): Process =
   let env = newStringTable({"USER": getEnv("USER"), "USER_DATA_DIR": USER_DATA_DIR, "APACHE_MODULES_DIR": "/usr/lib/apache2/modules/"})
   let command = httpdExecutable()
   if command.len > 0:
-    echo "starting httpd"
     result = startProcess(command, USER_DATA_DIR, args=["-d", USER_DATA_DIR, "-f", "httpd.conf"], options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=env)
 
 

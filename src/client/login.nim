@@ -43,36 +43,31 @@ Login.view = viewFn(LoginState):
     
   mdiv(
     a {class: "form-wrapper"},
-    mform(
-      mlabel(
-        "Login",
-        minput(a {type: "text"})
-      ),
-      mlabel(
-        "Password",
-        minput(a {type: "password"})
-      ),
-      minput(a {onclick: handleLogin, type: "submit", value: "Login"})
-    ),
+    
 
-    mcenter(
-      a {style: "text-decoration-line: underline; "},
-      "or"
-    ),
+    mdiv(
+      a {class: "login-form"},
+      mh2("Login"),
+      mform(
+        mh5("Enter your login and password"),
+        minput(a {placeholder: "Login", type: "text"}),
+        minput(a {placeholder: "Password", type: "password"}),
 
-    mform(
-      mlabel(
-        "One time password login",
-        minput(a {name: "otp", type: "text"})
+        mcenter(
+          a {style: "text-decoration-line: underline; "},
+          "or"
+        ),
+
+        mh5("Use a one-time password"),
+        minput(a {tabindex: -1, placeholder: "OTP Login", name: "otp", type: "text"}),
+        minput(a {style: "margin: 1em auto; width: 175px", onclick: handleLogin, type: "submit", value: "Login"})
       ),
-      minput(a {onclick: handleLogin, type: "submit", value: "OTP Login"})
-    ),
+      mcenter(
+        a {style: "min-height: 2em"},
+        state.errorMessage
+      )
 
-    mcenter(
-      a {style: "min-height: 2em"},
-      state.errorMessage
     )
-
 
   )
   
@@ -113,21 +108,25 @@ Registration.view = viewFn(RegistrationState):
     
   mdiv(
     a {class: "form-wrapper"},
-    mform(
-      mlabel(
-        "Desired username",
-        minput(a {type: "text"})
+    mdiv(a {class: "login-form"},
+      mh2("Register"),
+      mform(
+        mh5("Enter desired username and password"),
+        #mlabel(
+        #  "Desired username",
+        minput(a {placeholder: "Username", type: "text"}),
+        #),
+        #mlabel(
+        #  "Password",
+        minput(a {placeholder: "Password", type: "password"}),
+        #),
+        minput(a {onclick: handleRegistration, type: "submit", value: "Register", style: "margin: 1em auto; width: 175px"})
       ),
-      mlabel(
-        "Password",
-        minput(a {type: "password"})
-      ),
-      minput(a {onclick: handleRegistration, type: "submit", value: "Register"})
-    ),
 
-    mcenter(
-      a {style: "min-height: 2em"},
-      state.errorMessage
+      mcenter(
+        a {style: "min-height: 2em"},
+        state.errorMessage
+      )
     )
 
 

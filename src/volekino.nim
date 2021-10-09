@@ -4,7 +4,7 @@ from uri import nil
 import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
-import volekino/[userdata, models, config, library, ffmpeg]
+import volekino/[userdata, models, config, library, ffmpeg, gui]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
 import volekino/daemons/[httpd, transmissiond]
 import json
@@ -20,7 +20,7 @@ type SessionContext = ref object of Context
   sessionState: SessionState
 
 when defined(windows):
-  import winlean
+  discard#import winlean
 else:
   import posix
 
@@ -43,6 +43,15 @@ proc postUsers(ctx: SessionContext) {.async.} =
 proc getDownloads(ctx: SessionContext) {.async.} =
   let downloads = downloadsDb.getDownloads()
   resp jsonResponse(% downloads)
+
+
+proc postRestart(ctx: SessionContext) {.async, gcsafe.} =
+  resp "OK"
+  restart()
+
+proc postShutdown(ctx: SessionContext) {.async, gcsafe.} =
+  resp "OK"
+  shutdown()
 
 
 #[
@@ -303,28 +312,25 @@ proc writeIndex() =
         createSymLink(getAppDir() / "dist" / "index.html", staticDir / "index.html")
     except: discard
 
+var run = 0
 
-#[
-proc startHttpd: Process =
-  let env = newStringTable({"USER": getEnv("USER"), "USER_DATA_DIR": USER_DATA_DIR, "APACHE_MODULES_DIR": "/usr/lib/apache2/modules/"})
-  let command = httpdExecutable()
-  if command.len > 0:
-    echo "starting httpd"
-    result = startProcess(command, USER_DATA_DIR, args=["-d", USER_DATA_DIR, "-f", "httpd.conf"], options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=env)
-    ]#
-
-proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=false, populateUserData=true, syncOnly=false) =
-  if printDataDir and not syncOnly:
+proc main(api=true, apache=true, transmission=true, sync=true, gui=false, printDataDir=false, populateUserData=true, syncOnly=false, guiOnly=false) =
+  inc run
+  if printDataDir and not (syncOnly or guiOnly):
     echo USER_DATA_DIR
     quit 0
-  styledecho fgRed, "running with ", $ commandLineParams()
-  #createDir(staticDir)
-  #createDir(USER_DATA_DIR / "logs")
+
+  #let restarted = false
 
 
+
+  #let daemonStatus = daemonize(pidfile=VOLEKINO_PID):
+  #echo "daemon status ", daemonStatus
   if populateUserData:
-    userdata.populateFromZip()
-
+    try:
+      userdata.populateFromZip()
+    except:
+      discard
 
 
   if syncOnly:
@@ -345,57 +351,86 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
         #echo "here ", PSqlite3(dbConn).errcode()
         exitStatus = PSqlite3(dbConn).errcode()
 
-      if exitStatus != 7: break
+      if exitStatus != 7 and exitStatus != 5: break
       sleep 1000
         
     quit exitStatus
-
-  else:
+  elif guiOnly:
+    launchWebview()
+    return
+  if existsEnv("VOLEKINO_DAEMON"):
     discard initDb(USER_DATA_DIR)
     conf = loadConfig(appSettings)
+  elif volekinoIsRunning():
+    if sync:
+      runSync()
+    if gui:
+      startGui()
 
-  
+    return
+  else:
+    clearDaemonStatus()
+    var params = commandLineParams()
+    params.add "--populateUserData=off"
+    if run > 1:
+      params.add "--gui=off"
+    let daemon = invokeSelf(params)
+    writePID(daemon.processId)
+    while true:
+      #let pid = parseInt readfile(VOLEKINO_PID)
+      case getDaemonStatus():
+      of "restart":
+        styledecho fgRed, "restart"
+        #addProcess(
+        #  daemon.processId,
+        #  proc (f: AsyncFd): bool {.closure, gcsafe.} =
+        #    dispatch(main)
+        #    true
+        #)
 
-  #[
-  if not fileExists(staticDir / "index.html"):
-    createDir(staticDir)
-    when defined(release):
-      writeFile(staticDir / "index.html", INDEX_HTML)
-    else:
-      try:
-        if getAppDir().endsWith "dist":
-          createSymLink(getAppDir()  / "index.html", staticDir / "index.html")
-        else:
-          createSymLink(getAppDir() / "dist" / "index.html", staticDir / "index.html")
-      except: discard
-  ]#
+        daemon.terminate()
+        echo "child exited with ", daemon.waitForExit()
+        dispatch(main)
+        return
+        
+      of "shutdown":
+        styledecho fgRed, "shutdown"
+        clearPID()
+        daemon.terminate()
+        return
+        
+          
+        
+      sleep 1000
+
+    echo "daemon exited with ", daemon.waitForExit()
+
+
   if shouldWriteIndex():
     writeIndex()
     
 
   var httpdProcess, transmissionProcess: Process
+  var apacheShutdownHandler, transmissionShutdownHandler: ShutdownHandler
   if apache:
     httpdProcess = conf.startHttpd()
+    apacheShutdownHandler = proc {.gcsafe} =
+      shutdownHttpd(httpdProcess)
+    shutdownHandlers.add apacheShutdownHandler
   if transmission:
     initTransmissionRemote()
     transmissionProcess = conf.startTransmissionD()
+    transmissionShutdownHandler = proc {.gcsafe.} =
+      shutdownTransmissionD(transmissionProcess)
+    shutdownHandlers.add(transmissionShutdownHandler)
 
   let prologueSettings = prologue.newSettings(port = conf.port)
 
 
   if api:
     var shutdown = newSeq[prologue.Event]()
-    if apache:
-      shutdown.add initEvent(
-        proc {.gcsafe} =
-          shutdownHttpd(httpdProcess)
-      )
-
-    if transmission:
-      shutdown.add initEvent(
-        proc {.gcsafe.} =
-          shutdownTransmissionD(transmissionProcess)
-      )
+    for f in shutdownHandlers:
+      shutdown.add initEvent(f)
 
     var app = prologue.newApp(prologueSettings, shutdown = shutdown)
     
@@ -426,6 +461,13 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
         #app.use(authenticateUser())
     let requireAuth = conf.requireAuth()
 
+    #[
+    let restartMiddleWare: HandlerAsync = proc (ctx: SessionContext) {.async, gcsafe.} =
+      await switch(ctx)
+      restart()
+    ]#
+
+
     if usersDb.registeredCount == 0:
       let otp = usersDb.createOtpUser(allowAccountCreation=true, isAdmin=true)
       styledecho fgYellow, styleBright, "One time password: ", otp
@@ -449,9 +491,13 @@ proc main(api=true, apache=true, transmission=true, sync=true, printDataDir=fals
     app.get("/downloads", getDownloads, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/downloads", postDownloads, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/register", registerUser)
+    app.post("/restart", postRestart)#, middlewares= @[restartMiddleWare])
+    app.post("/shutdown", postShutdown)#, middlewares= @[restartMiddleWare])
     app.post("/logout", logout)
     if sync:
       runSync()
+    if gui:
+      startGui()
     app.run(SessionContext)
 
   if sync:
