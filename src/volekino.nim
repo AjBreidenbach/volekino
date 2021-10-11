@@ -6,7 +6,7 @@ import prologue/websocket
 #import mimetypes
 import volekino/[userdata, models, config, library, ffmpeg, gui]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
-import volekino/daemons/[httpd, transmissiond]
+import volekino/daemons/[httpd, transmissiond, ssh]
 import json
 from common/library_types import ConversionRequest, DownloadRequest
 import common/user_types
@@ -314,7 +314,17 @@ proc writeIndex() =
 
 var run = 0
 
-proc main(api=true, apache=true, transmission=true, sync=true, gui=false, printDataDir=false, populateUserData=true, syncOnly=false, guiOnly=false) =
+proc main(
+  api=true,
+  apache=true,
+  transmission=true,
+  sync=true,
+  gui=false,
+  printDataDir=false,
+  populateUserData=true,
+  syncOnly=false,
+  guiOnly=false
+  ) =
   inc run
   if printDataDir and not (syncOnly or guiOnly):
     echo USER_DATA_DIR
@@ -399,8 +409,6 @@ proc main(api=true, apache=true, transmission=true, sync=true, gui=false, printD
         daemon.terminate()
         return
         
-          
-        
       sleep 1000
 
     echo "daemon exited with ", daemon.waitForExit()
@@ -410,13 +418,22 @@ proc main(api=true, apache=true, transmission=true, sync=true, gui=false, printD
     writeIndex()
     
 
-  var httpdProcess, transmissionProcess: Process
-  var apacheShutdownHandler, transmissionShutdownHandler: ShutdownHandler
+  var httpdProcess, sshProcess, transmissionProcess: Process
+  var apacheShutdownHandler, sshShutdownHandler, transmissionShutdownHandler: ShutdownHandler
   if apache:
     httpdProcess = conf.startHttpd()
     apacheShutdownHandler = proc {.gcsafe} =
       shutdownHttpd(httpdProcess)
     shutdownHandlers.add apacheShutdownHandler
+    
+    let proxyServer = conf.proxyServer
+    if proxyServer.len > 0:
+      sshProcess = conf.startSshTunnel()
+      sshShutdownHandler = proc {.gcsafe.} =
+        sshProcess.terminate()
+      shutdownHandlers.add sshShutdownHandler
+      
+      
   if transmission:
     initTransmissionRemote()
     transmissionProcess = conf.startTransmissionD()
@@ -502,5 +519,11 @@ proc main(api=true, apache=true, transmission=true, sync=true, gui=false, printD
 
   if sync:
     runSync()
-  
-dispatch(main)
+
+if existsEnv("SSH_ASKPASS"):
+  discard initDb(USER_DATA_DIR, {0}, retries=1)
+  conf = loadConfig(appSettings)
+  let pwd = conf.getProxyPassword()
+  echo pwd
+else:
+  dispatch(main)

@@ -8,6 +8,11 @@ import tables, json
 type VoleKinoConfig* = ref object
   appSettings: AppSettings
   
+proc proxyServer*(config: VoleKinoConfig): string =
+  config.appSettings.getProperty("proxy-server")
+
+proc proxyServerToken*(config: VoleKinoConfig): string =
+  config.appSettings.getProperty("proxy-server-token")
 
 proc port*(config: VoleKinoConfig): Port =
   let property = config.appSettings.getProperty("port")

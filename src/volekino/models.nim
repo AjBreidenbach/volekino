@@ -30,13 +30,21 @@ proc createMediaTables*(db: DbConn) =
   libraryDb = db_library.createTable(db)
   subtitlesDb = db_subtitles.createTable(db)
 
-proc initDb*(path: string): tuple[defaultConn, mediaConn: DbConn] =
-  result[0] = open(USER_DATA_DIR / "volekino.db", "", "", "")
-  result[1] = open(USER_DATA_DIR / "volekino_m.db", "", "", "")
+proc initDb*(path: string, dbs = {0, 1}, retries = 0): tuple[defaultConn, mediaConn: DbConn] =
+  try:
+    if 0 in dbs:
+      result[0] = open(path / "volekino.db", "", "", "")
+      createTables(result[0])
 
-  createTables(result[0])
-  createMediaTables(result[1])
-  
+    if 1 in dbs:
+     result[1] = open(path / "volekino.db", "", "", "")
+     createMediaTables(result[1])
+  except DbError:
+    if retries > 0:
+      sleep 1000
+      return initDb(path, dbs, retries - 1)
+    else: echo "Could not initialize database ", getCurrentExceptionMsg()
+    
 template initTestDb*: untyped =
   import os
 

@@ -2,9 +2,9 @@ import appdirs, os, osproc, asyncdispatch
 import transmission_remote
 import strtabs, strutils
 
-let 
+let
   APP* = application("VoleKino", "Andrew Breidenbach")
-  USER_DATA_DIR* = user_data APP
+  USER_DATA_DIR* = if existsEnv("VOLEKINO_HOME"): getEnv("VOLEKINO_HOME") else: user_data APP
   publicDir* = USER_DATA_DIR / "public"
   libraryDir* = joinPath(USER_DATA_DIR, "public", "library")
   mediaDir* = USER_DATA_DIR / "media"
