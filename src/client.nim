@@ -2,7 +2,7 @@
 import mithril
 #import asyncjs
 import mithril/common_selectors
-import client/[jsffi, util, wsdispatcher, store]
+import client/[jsffi, util, wsdispatcher, store, globals]
 import client/[directory, convert, progress, login, user_menu, media, addmedia]
 import common/library_types
 
@@ -37,23 +37,23 @@ SideNav.view = viewFn(MComponent):
   mnav(
     m(mrouteLink,
       a {href: "/user-menu"},
-      mimg(a {src: "/images/users.svg"})
+      mimg(a {src: staticResource"/images/users.svg"})
     ),
     m(mrouteLink,
       a {href: libraryLink},
       (
         if useTableView:
-          mimg(a {src: "/images/thumbnail-view.svg"})
+          mimg(a {src: staticResource"/images/thumbnail-view.svg"})
         else:
-          mimg(a {src: "/images/list-view.svg"})
+          mimg(a {src: staticResource"/images/list-view.svg"})
       )
     ),
     #mimg(a {src: "/images/movie-camera.svg"}),
     m(mrouteLink,
       a {href: "/add"},
-      mimg(a {src: "/images/add.svg"})
+      mimg(a {src: staticResource"/images/add.svg"})
     ),
-    mimg(a {src: "/images/settings.svg"})
+    mimg(a {src: staticResource"/images/settings.svg"})
   )
   
 

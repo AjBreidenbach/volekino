@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors
-import ./jsffi, ./entry, ./util
+import ./jsffi, ./entry, ./util, ./globals
 #import algorithm
 type Directory = ref object of MComponent
 
@@ -37,7 +37,7 @@ proc newSearch: Search =
       a {class: "directory-top"},
       mdiv(
         a {class: "search-container"},
-        mimg(a {src: "/images/search.svg"}),
+        mimg(a {src: staticResource"/images/search.svg"}),
         minput(a {type: "search", oninput: oninput, value: search.currentInput})
       )
     )
@@ -92,7 +92,7 @@ proc newDirectory*: Directory =
   result.oninit = lifecycleHook:
     var response: JsObject
     handleErrorCodes:
-      response = await mrequest("/api/library")
+      response = await mrequest(apiPrefix"/library")
 
     #if response.error.to(bool): console.log(response.error)
     library = response.to(seq[Entry])

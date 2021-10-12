@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors
-import ./entry, ./jsffi, ./wsdispatcher, ./store
+import ./entry, ./jsffi, ./wsdispatcher, ./store, ./globals
 import ../common/library_types
 type MediaState = ref object
   entry: Entry
@@ -18,8 +18,8 @@ Media.oninit = lifecycleHook:
   state.startingTime = 0.0
 
   var 
-    entryPromise = mrequest("/api/library/" & uid)
-    subtitlesPromise = mrequest("/api/library/" & uid & "/subtitles")
+    entryPromise = mrequest(apiPrefix"library/" & uid)
+    subtitlesPromise = mrequest(apiPrefix"library/" & uid & "/subtitles")
 
 
   var entryFulfilled, subtitlesFulfilled = false
@@ -84,7 +84,7 @@ Media.view = viewFn(MediaState):
   var subtitleNodes = newSeq[VNode]()
   for track in state.subtitles:
     subtitleNodes.add mtrack(
-      a {label: track.title, kind: "subtitles", srclang: track.lang, src: cstring"/subtitles/" & track.uid}
+      a {label: track.title, kind: "subtitles", srclang: track.lang, src: staticResource"/subtitles/" & track.uid}
     )
   mdiv(
     a {style: "margin: 0 auto"},
@@ -92,7 +92,7 @@ Media.view = viewFn(MediaState):
       a { controls: true , onplay: onplay, onpause: onpause, ontimeupdate: ontimeupdate},
       msource(
         a {
-          src: (cstring"/library/" & mrouteparam("path")),
+          src: (staticResource"/library/" & mrouteparam("path")),
           type: cstring"video/" & state.entry.path.split(cstring".")[^1]
         }
       ),

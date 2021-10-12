@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors
-import ./jsffi
+import ./jsffi, ./globals
 
 
 var Login* = MComponent()
@@ -27,7 +27,7 @@ Login.view = viewFn(LoginState):
       requestBody.password = state.otpField.value
 
     try:
-      let response = await mrequest("/api/login", Post, requestBody)
+      let response = await mrequest(apiPrefix"login", Post, requestBody)
       state.errorMessage = ""
 
       discard setTimeout(
@@ -93,7 +93,7 @@ Registration.view = viewFn(RegistrationState):
     requestBody.password = state.passwordField.value
 
     try:
-      let response = await mrequest("/api/register", Post, requestBody)
+      let response = await mrequest(apiPrefix"register", Post, requestBody)
       state.errorMessage = "registration successful..."
 
       discard setTimeout(

@@ -1,5 +1,5 @@
 import jswebsockets
-import jsffi
+import jsffi, ./globals
 
 
 proc wrapDetail[T](detail: T): JsObject =
@@ -30,7 +30,7 @@ var ws = newWebSocket(
   (
     if location.protocol.to(cstring) == "http:": "ws://" 
     else: "wss://"
-  ) & location.host.to(cstring) & "/ws"
+  ) & location.host.to(cstring) & cstring"/" & wsPrefix("")
   )
 
 proc sendEvent*[T](eventName: cstring, detail: T) =

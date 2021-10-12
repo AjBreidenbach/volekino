@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors, ./jsffi
-import progress, store
+import progress, store, ./globals
 import ../common/library_types
 import strformat
 
@@ -16,7 +16,7 @@ var
 #TODO we can avoid redraws if the result hasn't changed
 proc refreshDownloads() {.async.} =
   try:
-    let newDownloads = (await mrequest("/api/downloads", background=true)).to(seq[Download])
+    let newDownloads = (await mrequest(apiPrefix"downloads", background=true)).to(seq[Download])
     if newDownloads == ongoingDownloads:
       timeoutDuration += 500
     else:
@@ -61,10 +61,10 @@ DownloadProgressPopupView.view = viewFn:
       a {style: "position: absolute; left: 0; width: 100%; top: 0; background-color: #8ed9ea; height: 1.75em; font-weight: bold; text-align: left; display: flex; align-items: center; padding: 0 0.5em; box-sizing: border-box;"},
       block:
         if shouldHidePopup():
-          mimg(a {src:"/images/chevron.svg", style: "width: 2em; position: absolute; left: 0;", onclick: popupShowHandler})
+          mimg(a {src: staticResource"/images/chevron.svg", style: "width: 2em; position: absolute; left: 0;", onclick: popupShowHandler})
         else:
           mchildren(
-            mimg(a {src:"/images/minus.svg", style:"width: 2em; right: 0; position: absolute", onclick: popupMinimizeHandler}),
+            mimg(a {src: staticResource"/images/minus.svg", style:"width: 2em; right: 0; position: absolute", onclick: popupMinimizeHandler}),
             "Downloads"
           )
     ),
@@ -127,7 +127,7 @@ AddMediaView.view = viewFn:
   let addDownload = eventHandlerAsync:
     let input = vnode.dom.querySelector("input[type='url']")
     let request = DownloadRequest(url: input.value.to(cstring))
-    console.log (await mrequest("/api/downloads", Post, toJs request))
+    console.log (await mrequest(apiPrefix"downloads", Post, toJs request))
     if timeout != -1:
       clearTimeout(timeout)
     discard loop()

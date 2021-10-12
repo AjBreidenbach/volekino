@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors
-import ./jsffi, ./store
+import ./jsffi, ./store, ./globals
 import algorithm
 import ../common/library_types
 import strformat
@@ -64,7 +64,7 @@ proc displayDuration(dur: int): string =
 proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPath: cstring): VNode =
 
   let onSourcelessImage = eventHandler:
-    e.target.src = cstring"/images/film-frames.svg"
+    e.target.src = staticResource"/images/film-frames.svg"
   mdiv(
     a {class: class},
     m(mrouteLink, a {href: pathToVideo, class: "nodecorate"},
@@ -128,14 +128,14 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
     #discard mrequest(cstring"/api/library/" & toJs(entry.id).to(cstring), cstring"delete")
 
   let onSourcelessImage = eventHandler:
-    e.target.src = cstring"/images/film-frames.svg"
+    e.target.src = staticResource"/images/film-frames.svg"
   
 
   mtr(
 
     a {class: class},
     mtd(
-      mimg(a {src: (if entry.uid in selected: "/images/circle.svg" else:"/images/hollow-circle.svg"), style: "    width: 2em; padding: 0.5em; box-sizing: border-box;", onclick: toggleSelect})
+      mimg(a {src: (if entry.uid in selected: staticResource"/images/circle.svg" else: staticResource"/images/hollow-circle.svg"), style: "    width: 2em; padding: 0.5em; box-sizing: border-box;", onclick: toggleSelect})
     ),
     mtd(
       m(mrouteLink, a {href: pathToVideo, class: "flex-cell"},
@@ -146,14 +146,14 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
     (
       mtd(
         if entry.pathHead.len > 0: m(mrouteLink, a {href: directoryPath, class: "flex-cell"},
-          mimg(a {src: "/images/open-folder.svg"}),
+          mimg(a {src: staticResource"/images/open-folder.svg"}),
           entry.pathHead
         )
         else: "")
     ),
     mtd(
       m(mrouteLink, a {href: (preserveQuery("/convert/" & toJs(entry.uid).to(cstring))), class: "flex-cell"},
-        mimg(a {src: "/images/exchange.svg", style: "width: 1.5em; padding:0"}),
+        mimg(a {src: staticResource"/images/exchange.svg", style: "width: 1.5em; padding:0"}),
         entry.videoEncoding & cstring"/" & entry.audioEncoding
       )
     )
@@ -195,8 +195,8 @@ converter toVNode*(entries: seq[Entry]): VNode =
   var hiddenCount = 0
   for entry in entries:
     if entry.uid in deleted: continue
-    let imageSource = cstring"/thumbnails/" & entry.uid.toJs.to(cstring)
-    let pathToVideo = cstring"/library/" & entry.uid#encodeURI(entry.path).replace(newRegExp(r"\/", "g"), "%2F")
+    let imageSource = staticResource"/thumbnails/" & entry.uid.toJs.to(cstring)
+    let pathToVideo = "/library/" & entry.uid#encodeURI(entry.path).replace(newRegExp(r"\/", "g"), "%2F")
 
     var class = "entry"
     
@@ -225,7 +225,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
               mh2(
                 a {style: "display: flex; align-items: center; margin: 1em 1em 0 1em; font-size: 1.3em; font-weight: 400;"},
                 entry.containingDirectory,
-                mimg(a {src:"/images/open-folder.svg"})
+                mimg(a {src: staticResource"/images/open-folder.svg"})
               )
             )
           )
@@ -256,7 +256,7 @@ converter toVNode*(entries: seq[Entry]): VNode =
 
   let deleteSelected = eventHandler:
     for uid in selected:
-      discard mrequest(cstring"/api/library/" & toJs(uid).to(cstring), cstring"delete")
+      discard mrequest(apiPrefix"library/" & toJs(uid).to(cstring), cstring"delete")
     deleted.incl selected
     selected = newJsSet()
 
@@ -278,9 +278,9 @@ converter toVNode*(entries: seq[Entry]): VNode =
                     if selected.len > 0:
                       mdiv(
                         a {style: "font-size: 0.5em; position: absolute;", class: "table-view-context-menu"},
-                        mimg(a {src: "/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
-                        mimg(a {class: "disabled", src: "/images/exchange.svg", style: "width: 2.5em"}),
-                        mimg(a {src: "/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
+                        mimg(a {src: staticResource"/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
+                        mimg(a {class: "disabled", src: staticResource"/images/exchange.svg", style: "width: 2.5em"}),
+                        mimg(a {src: staticResource"/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
                       )
                     else: mchildren()
                   ),
@@ -305,9 +305,9 @@ converter toVNode*(entries: seq[Entry]): VNode =
                   a {colspan: 4},
                   mdiv(
                     a {class: "table-view-context-menu"},
-                    mimg(a {src: "/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
-                    mimg(a {class: "disabled", src: "/images/exchange.svg", style: "width: 2.5em"}),
-                    mimg(a {src: "/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
+                    mimg(a {src: staticResource"/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
+                    mimg(a {class: "disabled", src: staticResource"/images/exchange.svg", style: "width: 2.5em"}),
+                    mimg(a {src: staticResource"/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
                   )
                 )
             )

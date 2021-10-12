@@ -40,7 +40,7 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
     result = startProcess(
       command,
       env=env,
-      args=[sshCommand, "-v", proxyServer, "-p", $port, "-l", username, "-R", &"/tmp/{username}:0.0.0.0:7000", "-N"],
+      args=[sshCommand, "-v", proxyServer, "-p", $port, "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=password", "-o", "ServerAliveInterval=60", "-l", username, "-R", &"/tmp/{username}:0.0.0.0:7000", "-N"],
       options={poEchoCmd, poStdErrToStdOut}
     )
 

@@ -1,5 +1,6 @@
 import jsffi, mithril, mithril/common_selectors
 import ../common/user_types
+import ./globals
 from sugar import capture
 
 
@@ -18,7 +19,7 @@ type SettingsManagerState = ref object
 var SettingsManager = MComponent()
 
 proc refreshSettings(state: var SettingsManagerState) {.async.} =
-  let response = await mrequest("/api/settings")
+  let response = await mrequest(apiPrefix"/settings")
   state.settings = response.to(seq[AppSetting])
   state.initialSettings = JSON.stringify(response).to(cstring)
   state.request = @[]
@@ -38,7 +39,7 @@ SettingsManager.onbeforeupdate = beforeUpdateHook:
 SettingsManager.view = viewFn(SettingsManagerState):
   let commitChanges = eventHandlerAsync:
     try:
-      let response = await mrequest("/api/settings", Post, toJs state.request)
+      let response = await mrequest(apiPrefix"/settings", Post, toJs state.request)
     except:
       console.log getJsException
 
@@ -159,7 +160,7 @@ OTPUserGenerator.view = viewFn(OTPUserGeneratorState):
     let requestBody = toJs CreateUserRequest(isAdmin: state.isAdmin, allowAccountCreation: state.allowAccountCreation)
     #console.log cstring"requestBody = ", requestBody
     try:
-      let response = await mrequest("/api/users/", Post, requestBody)
+      let response = await mrequest(apiPrefix"/users/", Post, requestBody)
       let uid = response.uid.to(cstring)
       state.setClipboard(uid)
       #state.setStatus cstring"Copied one-time password to clipboard"
@@ -234,7 +235,7 @@ UserMenu.oninit = lifecycleHook(UserMenuState):
 
   
   try:
-    let response = await mrequest("/api/users/me")
+    let response = await mrequest(apiPrefix"/users/me")
     if isTruthy response.isAdmin:
       loginStatus = AS_ADMIN
     else:
@@ -256,7 +257,7 @@ UserMenu.oninit = lifecycleHook(UserMenuState):
 UserMenu.view = viewFn(UserMenuState):
   let onclickLogout = eventHandlerAsync:
     e.preventDefault()
-    discard await mrequest("/api/logout", Post)
+    discard await mrequest(apiPrefix"/logout", Post)
     mrouteset(getPath())
 
   mdiv(

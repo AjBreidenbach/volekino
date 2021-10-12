@@ -2,7 +2,7 @@ import mithril, mithril/common_selectors
 import jsffi
 #import entry
 import ../common/library_types
-import progress, store
+import progress, store, ./globals
 
 var Convert* = MComponent()
 
@@ -64,7 +64,7 @@ proc populateEncodingParameters(state: ConvertState, selectedContainer: cstring)
 
 
 proc fetchStatus(jobId: int): Future[JsObject] {.async.} =
-  mrequest("/api/job-status/" & $jobId)
+  mrequest(apiPrefix"/job-status/" & $jobId)
   
 proc startProgressLoop(state: var ConvertState) =
   proc timeoutLoop {.async.}=
@@ -94,7 +94,7 @@ proc submitConversionRequest(state: var ConvertState) {.async.} =
     selectedAudioTrack: state.selectedAudioTrack,
     experimentalMode: state.experimentalMode
   )
-  let response = await mrequest("/api/convert", Post, toJs requestPayload)
+  let response = await mrequest(apiPrefix"/convert", Post, toJs requestPayload)
   if response.hasOwnProperty(cstring"jobId"):
     state.jobId = response.jobId.to(int)
     conversionSetJobId(state.conversionStatistics.entry.uid, state.jobId)
@@ -113,8 +113,8 @@ Convert.oninit = lifecycleHook(ConvertState):
 
   #state.id = id
 
-  #state.conversionStatistics = await mrequest(cstring "/api/library/" & uid.to(cstring) & cstring"/conversion-statistics")
-  let response = await mrequest(cstring "/api/library/" & uid.to(cstring) & cstring"/conversion-statistics")
+  #state.conversionStatistics = await mrequest(cstring apiPrefix"/library/" & uid.to(cstring) & cstring"/conversion-statistics")
+  let response = await mrequest(cstring apiPrefix"/library/" & uid.to(cstring) & cstring"/conversion-statistics")
   state.conversionStatistics = response.to(ConversionStatistics)
 
   console.log cstring"response = ", response
@@ -251,7 +251,7 @@ Convert.view = viewFn(ConvertState):
       mbutton(
         a {style: "width: 7em; background-color: #f07e5c; filter: invert(1)", onclick: initiateConversion},
         "Convert",
-        mimg(a {class: "spin", src: "/images/exchange.svg", style: "width: 1.5em"})
+        mimg(a {class: "spin", src: staticResource"/images/exchange.svg", style: "width: 1.5em"})
       )
       
     ),
