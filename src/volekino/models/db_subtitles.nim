@@ -119,7 +119,9 @@ proc removeEntrySubtitles*(subs: SubtitlesDb, entryUid: string) =
 
 proc entriesUsingTrack*(subs: SubtitlesDb, trackUid: string): int =
   let db = DbConn(subs)
-  parseInt db.getValue(sql SQL_STATEMENTS["inner-join-entry-count"], trackUid)
+  try:
+    parseInt db.getValue(sql SQL_STATEMENTS["inner-join-entry-count"], trackUid)
+  except: -1
 
 
 proc getEntrySubtitles*(subs: SubtitlesDb, entryUid: string): seq[SubtitleTrack] =

@@ -1,9 +1,14 @@
 import ./jsffi
-var API_PREFIX = location.pathname.split(cstring"/").pop().to(cstring)
-if API_PREFIX.len == 0:
+var
+  BASE = location.pathname.split(cstring"/").pop().to(cstring)
+  API_PREFIX: cstring
+
+
+console.log cstring "base = ", BASE
+if BASE.len == 0:
   API_PREFIX = cstring"/api/"
 else:
-  API_PREFIX = API_PREFIX & "/api/"
+  API_PREFIX = BASE & "/api/"
 
 
 
@@ -18,6 +23,9 @@ var BACKEND = getBackendParam()
 
 proc staticResource*(i: cstring): cstring =
   if BACKEND.len == 0:
-   i
+    if BASE.len == 0:
+      i
+    else:
+      BASE & i
   else:
     cstring"http://" & BACKEND & cstring":7000" & i

@@ -30,7 +30,7 @@ proc createMediaTables*(db: DbConn) =
   libraryDb = db_library.createTable(db)
   subtitlesDb = db_subtitles.createTable(db)
 
-proc initDb*(path: string, dbs = {0, 1}, retries = 0): tuple[defaultConn, mediaConn: DbConn] =
+proc initDb*(path: string, dbs = {0, 1}, retries = 3): tuple[defaultConn, mediaConn: DbConn] =
   try:
     if 0 in dbs:
       result[0] = open(path / "volekino.db", "", "", "")

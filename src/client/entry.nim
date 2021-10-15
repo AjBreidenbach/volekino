@@ -58,19 +58,21 @@ proc displayDuration(dur: int): string =
 
   result.add $s
   
+var image404 = newJsSet()
 
-  
+let onSourcelessImage = eventHandler:
+  image404.incl e.target.src.to(cstring)
+  e.target.src = staticResource"/images/film-frames.svg"
+   
 
 proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPath: cstring): VNode =
 
-  let onSourcelessImage = eventHandler:
-    e.target.src = staticResource"/images/film-frames.svg"
   mdiv(
     a {class: class},
     m(mrouteLink, a {href: pathToVideo, class: "nodecorate"},
     mdiv(
       a {class: "entry-thumbnail-container"},
-        mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource, onerror: onSourcelessImage}),
+        mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource, error: (if imageSource.len > 0: onSourcelessImage else: nil)}),
         mdiv(
           a {class: "title"},
           entry.pathTail#,
@@ -127,10 +129,6 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
 
     #discard mrequest(cstring"/api/library/" & toJs(entry.id).to(cstring), cstring"delete")
 
-  let onSourcelessImage = eventHandler:
-    e.target.src = staticResource"/images/film-frames.svg"
-  
-
   mtr(
 
     a {class: class},
@@ -139,7 +137,7 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
     ),
     mtd(
       m(mrouteLink, a {href: pathToVideo, class: "flex-cell"},
-        mimg(a {loading: "lazy", class: "thumbnail-tiny", src: imageSource, onerror: onSourcelessImage}),
+        mimg(a {loading: "lazy", class: "thumbnail-tiny", src: imageSource, error: (if imageSource.len > 0: onSourcelessImage else: nil)}),
         entry.pathTail
       )
     ),
@@ -173,6 +171,8 @@ proc subdirectoryContainer*(children: var seq[VNode]): VNode =
   )
   children.setLen(0)
 
+
+
 converter toVNode*(entries: seq[Entry]): VNode =
   var entryNodes = newSeq[VNode]()
   #let entries = entries.sortedByIt(it.path)
@@ -195,7 +195,8 @@ converter toVNode*(entries: seq[Entry]): VNode =
   var hiddenCount = 0
   for entry in entries:
     if entry.uid in deleted: continue
-    let imageSource = staticResource"/thumbnails/" & entry.uid.toJs.to(cstring)
+    var imageSource = staticResource"/thumbnails/" & entry.uid.toJs.to(cstring)
+    if imageSource in image404: imageSource = cstring""
     let pathToVideo = "/library/" & entry.uid#encodeURI(entry.path).replace(newRegExp(r"\/", "g"), "%2F")
 
     var class = "entry"

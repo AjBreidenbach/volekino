@@ -323,7 +323,8 @@ proc main(
   printDataDir=false,
   populateUserData=true,
   syncOnly=false,
-  guiOnly=false
+  guiOnly=false,
+  tunnelOnly=false
   ) =
   inc run
   if printDataDir and not (syncOnly or guiOnly):
@@ -367,6 +368,14 @@ proc main(
     quit exitStatus
   elif guiOnly:
     launchWebview()
+    return
+  elif tunnelOnly:
+    try:
+      let dbConn = initDb(USER_DATA_DIR, dbs={0})
+      conf = loadConfig(appSettings)
+      discard conf.startSshTunnel()
+      # this shit never returns I guess
+    except: discard
     return
   if existsEnv("VOLEKINO_DAEMON"):
     discard initDb(USER_DATA_DIR)
@@ -428,7 +437,7 @@ proc main(
     
     let proxyServer = conf.proxyServer
     if proxyServer.len > 0:
-      sshProcess = conf.startSshTunnel()
+      sshProcess = invokeSelf("--tunnelOnly", "--populateUserData=off")
       sshShutdownHandler = proc {.gcsafe.} =
         sshProcess.terminate()
       shutdownHandlers.add sshShutdownHandler

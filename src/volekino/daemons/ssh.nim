@@ -1,5 +1,6 @@
 import ../globals, ../config
 import os, osproc, strutils, strformat, streams, asyncdispatch, strtabs
+import terminal
 
 proc getProxyPassword*(conf: VoleKinoConfig): string =
   try: conf.proxyServerToken.split(':')[1]
@@ -40,8 +41,8 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
     result = startProcess(
       command,
       env=env,
-      args=[sshCommand, "-v", proxyServer, "-p", $port, "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=password", "-o", "ServerAliveInterval=60", "-l", username, "-R", &"/tmp/{username}:0.0.0.0:7000", "-N"],
-      options={poEchoCmd, poStdErrToStdOut}
+      args=[sshCommand, "-v", proxyServer, "-p", $port, "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=password", "-o", "ServerAliveInterval=30",  "-l", username, "-R", &"/tmp/{username}:0.0.0.0:7000", "-N"],
+      options={poEchoCmd, poStdErrToStdOut, poParentStreams}
     )
 
     let output = result.outputStream
@@ -55,7 +56,7 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
           return
         if line.contains("remote forward success"):
           echo "forward successful"
-          return
+          break
         elif line.contains("remote forward failure"):
           echo "failed to forward"
           result.terminate()
@@ -67,6 +68,37 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
       else:
         sleep 10
 
+    
+
+
+    #[
+    let process = result
+    proc logOutput {.async, gcsafe.} =
+      echo "logOutput"
+      echo "atEnd? ", atEnd(output)
+      while process.running:
+        if atEnd(output):
+          await sleepAsync 1000
+        else:
+          styledecho fgBlue, output.readLine
+      echo "process not running but not exited?"
+      
+    ]#
+    addProcess(
+      result.processId,
+      proc (fd: AsyncFd): bool {.gcsafe.} =
+        styledecho fgRed, "ssh exited"
+    )
+    while result.running:
+      if atEnd(output):
+        sleep 100
+      else:
+        styledecho fgBlue, output.readLine
+
+    #[
+    callSoon do:
+      asyncCheck logOutput()
+    ]#
 
 when isMainModule:
   import ../models
