@@ -367,7 +367,10 @@ proc main(
         
     quit exitStatus
   elif guiOnly:
-    launchWebview()
+    try:
+      discard initDb(USER_DATA_DIR, dbs={0})
+      launchWebview()
+    except: styledecho fgRed, "couldn't open db to create session"
     return
   elif tunnelOnly:
     try:

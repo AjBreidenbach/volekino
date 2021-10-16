@@ -146,7 +146,7 @@ proc otpLogin*(udb: UsersDb, otp: string, expirationPeriod: int): string =
   let ts = udb.otpCreationTime(otp)
   let currentTime = toUnix getTime()
 
-  if ts + expirationPeriod < currentTime: return
+  if expirationPeriod != -1 and ts + expirationPeriod < currentTime: return
 
   result = udb.createSession(
     udb.getUserFromOTP(otp),
