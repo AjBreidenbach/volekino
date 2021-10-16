@@ -29,3 +29,7 @@ proc staticResource*(i: cstring): cstring =
       BASE & i
   else:
     cstring"http://" & BACKEND & cstring":7000" & i
+
+var logstatements*: seq[cstring] = @[]
+proc dlog*(s: cstring) =
+  logstatements.add s

@@ -9,6 +9,6 @@ template handleErrorCodes*(body: untyped): untyped =
     let ex = getJsException()
     case ex.code.to(int):
       of 401:
-        mrouteset("/login")
+        discard setTimeout(cint 1000, TimeoutFunction(proc = mrouteset("/login")))
         return
       else: discard

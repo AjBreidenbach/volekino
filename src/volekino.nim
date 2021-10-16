@@ -4,7 +4,7 @@ from uri import nil
 import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
-import volekino/[userdata, models, config, library, ffmpeg, gui]
+import volekino/[userdata, models, config, library, ffmpeg, gui, parse_settings]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
 import volekino/daemons/[httpd, transmissiond, ssh]
 import json
@@ -314,6 +314,15 @@ proc writeIndex() =
 
 var run = 0
 
+proc applyInputSettings =
+  discard initDb(USER_DATA_DIR, dbs={0})
+  var inputBuffer = ""
+  while not endOfFile(stdin):
+    inputBuffer.add stdin.readLine
+
+  for (key, value) in parseSettings(inputBuffer):
+    appSettings.setProperty(key, value)
+
 proc main(
   api=true,
   apache=true,
@@ -324,13 +333,16 @@ proc main(
   populateUserData=true,
   syncOnly=false,
   guiOnly=false,
-  tunnelOnly=false
+  tunnelOnly=false,
+  settings=false
   ) =
+  echo "settings = ", settings
   inc run
-  if printDataDir and not (syncOnly or guiOnly):
+  if printDataDir:
     echo USER_DATA_DIR
     quit 0
-
+      
+    
   #let restarted = false
 
 
@@ -374,20 +386,25 @@ proc main(
     return
   elif tunnelOnly:
     try:
-      let dbConn = initDb(USER_DATA_DIR, dbs={0})
+      discard initDb(USER_DATA_DIR, dbs={0})
       conf = loadConfig(appSettings)
       discard conf.startSshTunnel()
-      # this shit never returns I guess
-    except: discard
+    except:
+      styledecho fgRed, "couldn't open db to create tunnel?"
+      styledecho fgRed, getCurrentExceptionMsg()
     return
   if existsEnv("VOLEKINO_DAEMON"):
     discard initDb(USER_DATA_DIR)
     conf = loadConfig(appSettings)
+          
   elif volekinoIsRunning():
     if sync:
       runSync()
     if gui:
       startGui()
+    if settings:
+      applyInputSettings()
+      restart()
 
     return
   else:
@@ -396,9 +413,11 @@ proc main(
     params.add "--populateUserData=off"
     if run > 1:
       params.add "--gui=off"
+    elif settings:
+      applyInputSettings()
     let daemon = invokeSelf(params)
     writePID(daemon.processId)
-    while true:
+    while daemon.running:
       #let pid = parseInt readfile(VOLEKINO_PID)
       case getDaemonStatus():
       of "restart":
@@ -421,7 +440,8 @@ proc main(
         daemon.terminate()
         return
         
-      sleep 1000
+      try: sleep 1000
+      except: discard
 
     echo "daemon exited with ", daemon.waitForExit()
 

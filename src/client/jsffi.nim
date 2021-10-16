@@ -35,6 +35,8 @@ proc rfind*(s:cstring,c:cstring): cint {.importcpp: "lastIndexOf".}
 proc rfind*(s:cstring,c:char): cint = rfind(s,cstring c)
 proc localeCompare*(s1,s2:cstring):int {.importcpp.}
 proc sort*[T](a: var openArray[T], cmp: proc (x, y: T): int) {.importcpp.}
+proc decodeURI*(s:cstring):cstring {.importc.}
+proc decodeURIComponent*(s:cstring):cstring {.importc.}
 
 
 var JSON* {.importc.} : JsObject

@@ -42,7 +42,7 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
       command,
       env=env,
       args=[sshCommand, "-v", proxyServer, "-p", $port, "-o", "StrictHostKeyChecking=no", "-o", "PreferredAuthentications=password", "-o", "ServerAliveInterval=30",  "-l", username, "-R", &"/tmp/{username}:0.0.0.0:7000", "-N"],
-      options={poEchoCmd, poStdErrToStdOut, poParentStreams}
+      options={poEchoCmd, poStdErrToStdOut}
     )
 
     let output = result.outputStream

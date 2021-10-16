@@ -6,7 +6,6 @@ import client/[jsffi, util, wsdispatcher, store, globals]
 import client/[directory, convert, progress, login, user_menu, media, addmedia]
 import common/library_types
 
-
 let mountPoint = document.querySelector(cstring"#mount")
 
 
@@ -14,6 +13,8 @@ view(Page404):
   mh1("page not found")
 
 
+dlog(cstring "query = " & decodeURIComponent(location.search.to(cstring)))
+document.cookie = cstring"session="& decodeURIComponent(location.search.to(cstring).slice(1))
 
 var SideNav = MComponent()
 SideNav.view = viewFn(MComponent):
@@ -53,7 +54,10 @@ SideNav.view = viewFn(MComponent):
       a {href: "/add"},
       mimg(a {src: staticResource"/images/add.svg"})
     ),
-    mimg(a {src: staticResource"/images/settings.svg"})
+    m(mrouteLink,
+      a {href: "/debug"},
+      mimg(a {src: staticResource"/images/settings.svg"})
+    )
   )
   
 
@@ -72,6 +76,16 @@ proc wrapPage(selector: MithrilSelector): MithrilSelector =
 
   wrapper
 
+var Debug = MComponent()
+import sequtils
+Debug.view = viewFn:
+  mdiv(
+    mh1("Debug info"),
+    mchildren(
+      logstatements.mapIt(mdiv(it))
+    )
+  )
+
 block:
 
   mroute(
@@ -86,10 +100,17 @@ block:
       "/login": wrapPage Login,
       "/register": wrapPage Registration,
       "/user-menu": wrapPage UserMenu,
-      "/add": wrapPage AddMediaView
+      "/add": wrapPage AddMediaView,
+      "/debug": wrapPage Debug
 
     }
   )
-#
+
+block:
+  #let query = getQuery()
+  #if isTruthy query.session:
+    discard
+    #document.cookie = cstring"session=" & query.session.to(cstring)
+
 
 
