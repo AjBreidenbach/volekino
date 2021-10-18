@@ -1,5 +1,5 @@
 # Package
-import os
+import os, sequtils, strutils
 #import userdata
 
 version       = "0.1.0"
@@ -11,6 +11,24 @@ bin           = @["volekino"]
 
 switch("outdir", "dist")
 
+
+proc passFlags(command: string) =
+  let defineFlags = commandLineParams().filterIt(it.startsWith("-d:"))
+  exec command & " " & defineFlags.join(" ")
+
+iterator defines: string =
+  for p in commandLineParams():
+    if p.startsWith "-d:":
+      yield p[3..^1]
+      
+
+proc compileWithCommand(command, project ="") =
+  echo "command: ", command
+  echo "project: ", project
+  for def in defines():
+    echo "defining ", def
+    switch("define", def)
+  setCommand(command, project)
 
 task compileFrontend, "":
   if "-d:release" in commandLineParams():
@@ -28,10 +46,15 @@ task buildFrontend, "build client side code":
 
 task buildBackend, "build server code":
   exec "nim c -r userdata"
+  #[
   if "-d:release" in commandLineParams():
     switch("define", "release")
+  if "-d:headless" in commandLineParams():
+    switch("define", "headless")
+  ]#
   switch("define", "usestd")
-  setCommand("c", getPkgDir() / "src" / "volekino.nim")
+  #setCommand("c", getPkgDir() / "src" / "volekino.nim")
+  compileWithCommand("c", getPkgDir() / "src" / "volekino.nim")
 
 task buildAll, "":
   if "-d:release" in commandLineParams():
@@ -51,6 +74,13 @@ task buildDebianArm, "":
   exec "nimble -d:release buildAll"
   exec "cp dist/volekino debian/volekino_0.1.0_arm64/usr/bin/"
   exec "dpkg-deb --build debian/volekino_0.1.0_arm64/"
+
+task buildDebianTermux, "":
+  exec "nimble -d:release buildFrontend"
+  exec "nimble -d:release -d:ui_launcher='termux-open' -d:apache_modules_dir='/data/data/com.termux/files/usr/libexec/apache2/'  -d:termux buildBackend"
+  exec "cp dist/volekino debian/volekino-headless_0.1.0_aarch64/data/data/com.termux/files/usr/bin"
+  exec "dpkg-deb --build debian/volekino-headless_0.1.0_aarch64/"
+
 
 #task packageDeban
 

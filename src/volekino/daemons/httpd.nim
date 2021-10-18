@@ -11,8 +11,15 @@ proc apacheCtlExecutable: string =
     result = findExe(exeName)
     if result.len > 0: break
 
+const apache_modules_dir {.strdefine.}: string = "/usr/lib/apache2/modules/"
 
-let apacheEnv = newStringTable({"USER": getEnv("USER"), "USER_DATA_DIR": USER_DATA_DIR, "APACHE_MODULES_DIR": "/usr/lib/apache2/modules/", "APACHE_PID_FILE": USER_DATA_DIR / "httpd.pid"})
+  
+var
+  apacheEnv = newStringTable({"USER": getEnv("USER"), "USER_DATA_DIR": USER_DATA_DIR, "APACHE_MODULES_DIR": getEnv("APACHE_MODULES_DIR", apache_modules_dir), "APACHE_PID_FILE": USER_DATA_DIR / "httpd.pid"})
+
+
+when defined(termux):
+  apacheEnv["LD_PRELOAD"] = "/data/data/com.termux/files/usr/libexec/apache2/mod_include.so"
 
 proc startHttpd*(conf: VoleKinoConfig): Process =
   #let command = httpdExecutable()
