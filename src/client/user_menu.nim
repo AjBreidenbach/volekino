@@ -9,22 +9,41 @@ const LOGGED_OUT = cstring"not logged in"
 const PLAIN_USER = cstring"logged in"
 const AS_ADMIN = cstring"logged in as admin"
 
+type AppSettingData = ref object of AppSetting
+  updatedValue: JsObject
+
 type SettingsManagerState = ref object
   ready: bool
-  settings: seq[AppSetting]
-  initialSettings: cstring
+  settings: seq[AppSettingData]
   allowRedraw: bool
-  request: ApplySettingsRequest
+  requiresRestart: bool
+  uncommittedChanges: bool
 
 var SettingsManager = MComponent()
 
 proc refreshSettings(state: var SettingsManagerState) {.async.} =
+  console.log(cstring"refreshSettings", state)
+  state.uncommittedChanges = false
+  state.requiresRestart = false
   let response = await mrequest(apiPrefix"settings")
-  state.settings = response.to(seq[AppSetting])
-  state.initialSettings = JSON.stringify(response).to(cstring)
-  state.request = @[]
-
+  state.settings = response.to(seq[AppSettingData])
+  for i in 0..<state.settings.len:
+    state.settings[i].updatedValue = state.settings[i].value
+    
   state.ready = true
+
+proc diffSettings(state: var SettingsManagerState) =
+  var uncommittedChanges = false
+  for setting in state.settings:
+    if setting.updatedValue != setting.value:
+      state.uncommittedChanges = true
+      uncommittedChanges = true
+      if setting.requiresRestart:
+        state.requiresRestart = true
+        return
+
+  state.requiresRestart = false
+  state.uncommittedChanges = uncommittedChanges
 
 SettingsManager.oninit = lifecycleHook(SettingsManagerState):
   state.ready = false
@@ -35,17 +54,38 @@ SettingsManager.onbeforeupdate = beforeUpdateHook:
   result = old.state.allowRedraw.to(bool)
   vnode.state.allowRedraw = false
   
+
+proc reload {.async.} =
+  echo "reloading page"
+  try:
+    discard (await mrequest(apiPrefix"restart", Post))
+  except:
+    discard
+  finally:
+    discard setTimeout(cint 2000, location.reload.bind(window.location).to(TimeoutFunction))
     
 SettingsManager.view = viewFn(SettingsManagerState):
   let commitChanges = eventHandlerAsync:
+    e.redraw = false
     try:
-      let response = await mrequest(apiPrefix"settings", Post, toJs state.request)
+      var request: ApplySettingsRequest
+      for setting in state.settings:
+        if setting.value != setting.updatedValue:
+          request.add ApplySettingsFragment(key: setting.name, value: setting.updatedValue.toString().to(cstring))
+      state.allowRedraw=true
+      let response = await mrequest(apiPrefix"settings", Post, toJs request)
     except:
       console.log getJsException
+      echo "fuck"
+    finally:
+        discard reload()
 
+    state.allowRedraw = true
     await state.refreshSettings()
 
   let clear = eventHandler:
+    e.redraw = false
+    state.allowRedraw = true
     discard state.refreshSettings()
     
   if state.ready:
@@ -70,34 +110,27 @@ SettingsManager.view = viewFn(SettingsManagerState):
                 )
 
                 try:
-                  setting.value = JSON.parse newValue
+                  setting.updatedValue = JSON.parse newValue
                 except:
-                  setting.value = toJs newValue
+                  setting.updatedValue = toJs newValue
 
-                var found = false
-                for fragment in state.request.mitems:
-                  if fragment.key == setting.name:
-                    found = true
-                    fragment.value = newValue
-                if not found:
-                  state.request.add ApplySettingsFragment(key: setting.name, value: newValue)
-
+                state.diffSettings()
 
               nodes.add mtr(
                 mtd(a {style: "font-family: monospace; white-space: nowrap;"}, setting.name),
                 mtd(a {style: "font-size: 0.9em;"}, setting.description),
                 mtd(a {style: "font-family: monospace;"},setting.default),
                 mtd(
-                  m(toSelector $setting.selector, a {value: setting.value, checked: isTruthy(setting.value), onchange: onchange})
+                  m(toSelector $setting.selector, a {value: setting.updatedValue, checked: isTruthy(setting.updatedValue), onchange: onchange})
                 )
               )
           nodes
         )
       ),
-      if state.initialSettings != JSON.stringify(state.settings).to(cstring):
+      if state.uncommittedChanges:
         mdiv(
           a {style: "display: flex; justify-content: space-between"},
-          mbutton(a {onclick: commitChanges}, "Commit changes"),
+          mbutton(a {onclick: commitChanges}, if state.requiresRestart: "Commit changes and restart" else: "Commit changes"),
           mbutton(a {onclick: clear}, "Clear")
         )
       else: mchildren()

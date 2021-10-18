@@ -37,6 +37,7 @@ proc localeCompare*(s1,s2:cstring):int {.importcpp.}
 proc sort*[T](a: var openArray[T], cmp: proc (x, y: T): int) {.importcpp.}
 proc decodeURI*(s:cstring):cstring {.importc.}
 proc decodeURIComponent*(s:cstring):cstring {.importc.}
+proc deepCopy*[T](y: seq[T]): seq[T] {.importcpp: "slice".}
 
 
 var JSON* {.importc.} : JsObject
@@ -46,6 +47,7 @@ proc floor*(f: float): int {.importc: "Math.floor".}
 converter toCstring*(s: cint | int): cstring = s.toJs.to(cstring)
 
 var document* {.importc.} : JsObject
+var window* {.importc.} : JsObject
 var navigator* {.importc.} : JsObject
 var location* {.importc.} : JsObject
 var console* {.importc.} : JsObject

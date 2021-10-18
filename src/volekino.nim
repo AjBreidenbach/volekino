@@ -431,6 +431,7 @@ proc main(
 
         daemon.terminate()
         echo "child exited with ", daemon.waitForExit()
+        sleep 1000 # better to check ports?
         dispatch(main)
         return
         

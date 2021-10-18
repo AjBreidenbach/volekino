@@ -23,7 +23,7 @@ type ApplySettingsRequest* = seq[ApplySettingsFragment]
   
 
 
-type AppSetting* = ref object
+type AppSetting* = ref object of RootObj
   name*: StringImpl
   default*: Dynamic
   value*: Dynamic
