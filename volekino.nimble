@@ -77,9 +77,9 @@ task buildDebianArm, "":
 
 task buildDebianTermux, "":
   exec "nimble -d:release buildFrontend"
-  exec "nimble -d:release -d:ui_launcher='termux-open' -d:apache_modules_dir='/data/data/com.termux/files/usr/libexec/apache2/'  -d:termux buildBackend"
-  exec "cp dist/volekino debian/volekino-headless_0.1.0_aarch64/data/data/com.termux/files/usr/bin"
-  exec "dpkg-deb --build debian/volekino-headless_0.1.0_aarch64/"
+  exec "nimble -d:release -d:ui_launcher='termux-open-url' -d:termux buildBackend"
+  exec "cp dist/volekino debian/volekino-termux_0.1.0_aarch64/data/data/com.termux/files/usr/bin"
+  exec "dpkg-deb --build debian/volekino-termux_0.1.0_aarch64/"
 
 
 #task packageDeban

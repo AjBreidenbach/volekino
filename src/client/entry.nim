@@ -133,7 +133,7 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
 
     a {class: class},
     mtd(
-      mimg(a {src: (if entry.uid in selected: staticResource"/images/circle.svg" else: staticResource"/images/hollow-circle.svg"), style: "    width: 2em; padding: 0.5em; box-sizing: border-box;", onclick: toggleSelect})
+      mimg(a {src: (if entry.uid in selected: staticResource"/images/enabled.svg" else: staticResource"/images/disabled.svg"), style: "    width: 2em; padding: 0.5em; box-sizing: border-box;", onclick: toggleSelect})
     ),
     mtd(
       m(mrouteLink, a {href: pathToVideo, class: "flex-cell"},
