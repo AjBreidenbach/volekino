@@ -1,10 +1,10 @@
 import volekino/globals
-import asyncdispatch, os, db_sqlite, sqlite3, strutils, json, re, osproc, streams#, asyncfile
+import asyncdispatch, os, db_sqlite, sqlite3, strutils, json, osproc
 from uri import nil
 import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
-import volekino/[userdata, models, config, library, ffmpeg, gui, parse_settings]
+import volekino/[userdata, models, config, library, ffmpeg, gui, parse_settings, pipe]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
 import volekino/daemons/[httpd, transmissiond, ssh]
 import json
@@ -336,7 +336,6 @@ proc main(
   tunnelOnly=false,
   settings=false
   ) =
-  echo "settings = ", settings
   inc run
   if printDataDir:
     echo USER_DATA_DIR
@@ -417,18 +416,13 @@ proc main(
       applyInputSettings()
     let
       daemon = invokeSelf(false, params)
-      output = daemon.outputStream
-      log = newFileStream(open(LOG_DIR / "volekino", fmWrite))
+
+    asyncCheck asyncPipe(daemon, LOG_DIR / "volekino")
 
     writePID(daemon.processId)
     while daemon.running:
-      #let pid = parseInt readfile(VOLEKINO_PID)
-
-      var line: string
-      while output.readLine(line):
-        log.writeLine(line)
-        
-          
+              
+      poll(1000)
       case getDaemonStatus():
       of "restart":
         styledecho fgRed, "restart"
@@ -451,8 +445,8 @@ proc main(
         daemon.terminate()
         return
         
-      try: sleep 1000
-      except: discard
+      #try: sleep 1000
+      #except: discard
 
     echo "daemon exited with ", daemon.waitForExit()
 

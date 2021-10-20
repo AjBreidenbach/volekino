@@ -18,6 +18,7 @@ var
   apacheEnv = newStringTable({"USER": getEnv("USER"), "USER_DATA_DIR": USER_DATA_DIR, "APACHE_MODULES_DIR": getEnv("APACHE_MODULES_DIR", apache_modules_dir), "APACHE_PID_FILE": USER_DATA_DIR / "httpd.pid"})
 var apacheArgs = @["-d", USER_DATA_DIR, "-f", "httpd.conf"]
 
+#echo "apacheEnv = ", apacheEnv
 
 when defined(termux):
   apacheArgs.add ["-D", "StaticModules"]
@@ -27,6 +28,8 @@ proc startHttpd*(conf: VoleKinoConfig): Process =
   let command = apacheCtlExecutable()
   if command.len > 0:
     #result = startProcess(command, USER_DATA_DIR, args=["-d", USER_DATA_DIR, "-f", "httpd.conf"], options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=apacheEnv)
+    #TODO check exit codes
+    echo "apache status: ", execProcess("/usr/sbin/apache2", args=(@["-t"] & apacheArgs), env=apacheEnv, options = {poStdErrToStdOut})
     result = startProcess(command, USER_DATA_DIR, args=(apacheArgs & @[ "-k", "start"]), options = {poDaemon, poStdErrToStdOut, poParentStreams, poEchoCmd}, env=apacheEnv)
 
 

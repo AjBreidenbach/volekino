@@ -8,10 +8,12 @@ local-proxy-pass:
   selector: input[type="checkbox"]
 proxy-server:
   default: "" #volekino.abreidenbach.com
+  requiresRestart: true
   description: HTTPS enabled server used to provide a secure connection to your local VoleKino instance; This connection is made by opening an SSH tunnel between the proxy server and your local instance and routing the traffic through the tunnel.  End users will access your instance through a prefixed url in the format of `https://volekino.com/<your-instance-identifier>/*`
   selector: input[type="url"]
 proxy-server-token:
   default: ""
+  requiresRestart: true
   description: Token obtained after registering with a VoleKino proxy service;  Used to authenticate your VoleKino instance with the proxy server;
   selector: input[type="text"]
 require-auth:
