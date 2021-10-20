@@ -12,10 +12,12 @@ let
   staticDir* = joinPath(USER_DATA_DIR, "public", "static")
   tmpDir* = getTempDir() / "volekino"
   TMP_DIR* = tmpDir
+  LOG_DIR* = USER_DATA_DIR / "logs"
   dbPath* = joinPath(USER_DATA_DIR, "volekino.db")
   VOLEKINO_PID* = USER_DATA_DIR / "volekino.pid"
   VOLEKINO_STATUS* = TMP_DIR / "volekino_daemon"
 
+createDir(LOG_DIR)
 
 when defined(windows):
   import psutil/psutil_windows
@@ -40,12 +42,20 @@ proc runShutdownHandlers =
   for f in shutdownHandlers:
     f()
 
-proc invokeSelf*(args: varargs[string]): Process =
+proc invokeSelf*(useParentStreams=true, args: varargs[string]): Process =
   let command = getAppFilename()
-  var env = newStringTable({"VOLEKINO_DAEMON": ""})
+  var 
+    env = newStringTable({"VOLEKINO_DAEMON": ""})
+    #options = {poEchoCmd, poParentStreams, poDaemon, poUsePath}
+    options = {poEchoCmd, poDaemon, poUsePath}
   for (key, value) in envPairs():
     env[key] = value
-  startProcess(command, args=args, options={poEchoCmd, poParentStreams, poDaemon, poUsePath}, env=env)
+  if useParentStreams:
+    options.incl(poParentStreams)
+  startProcess(command, args=args, options=options, env=env)
+
+proc invokeSelf*(args: varargs[string]): Process =
+  invokeSelf(useParentStreams=true, args)
   
 
 proc restart* =

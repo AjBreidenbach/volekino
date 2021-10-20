@@ -20,8 +20,11 @@ proc sshControlLoop(ssh: Process, password: string){.async.} =
 ]#
       
 proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
-  let sshCommand = findExe("ssh")
-  let command = findExe("setsid")
+  let
+    sshCommand = findExe("ssh")
+    command = findExe("setsid")
+    log = open(LOG_DIR / "ssh", fmAppend)
+
 
   if sshCommand.len + command.len > 0:
     let
@@ -50,7 +53,8 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
     while true:
       if not atEnd(output):
         discard output.readLine(line)
-        echo "[ssh:] ", line
+        #echo "[ssh:] ", line
+        log.writeLine(line)
         if line.contains("Permission denied"):
           echo "password incorrect? ", password
           return

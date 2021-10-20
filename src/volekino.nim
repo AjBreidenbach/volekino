@@ -1,5 +1,5 @@
 import volekino/globals
-import asyncdispatch, os, db_sqlite, sqlite3, strutils, json, re, osproc#, asyncfile
+import asyncdispatch, os, db_sqlite, sqlite3, strutils, json, re, osproc, streams#, asyncfile
 from uri import nil
 import prologue except newSettings, newApp
 import prologue/websocket
@@ -415,10 +415,20 @@ proc main(
       params.add "--gui=off"
     elif settings:
       applyInputSettings()
-    let daemon = invokeSelf(params)
+    let
+      daemon = invokeSelf(false, params)
+      output = daemon.outputStream
+      log = newFileStream(open(LOG_DIR / "volekino", fmWrite))
+
     writePID(daemon.processId)
     while daemon.running:
       #let pid = parseInt readfile(VOLEKINO_PID)
+
+      var line: string
+      while output.readLine(line):
+        log.writeLine(line)
+        
+          
       case getDaemonStatus():
       of "restart":
         styledecho fgRed, "restart"
