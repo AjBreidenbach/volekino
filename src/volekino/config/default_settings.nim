@@ -22,6 +22,7 @@ for (settingName, settingValue) in defaultSettingsJson.pairs:
     value: settingValue["default"],
     description: settingValue["description"].getStr(),
     selector: settingValue["selector"].getStr(),
+    category: settingValue.getOrDefault("category").getStr("main"),
     requiresRestart: settingValue.getOrDefault("requiresRestart").getBool()
   )
   defaultSettings.add setting

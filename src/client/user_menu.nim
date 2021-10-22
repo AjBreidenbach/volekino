@@ -1,6 +1,6 @@
 import jsffi, mithril, mithril/common_selectors
 import ../common/user_types
-import ./globals
+import ./globals, ./settings_view, ./util
 from sugar import capture
 
 
@@ -9,6 +9,7 @@ const LOGGED_OUT = cstring"not logged in"
 const PLAIN_USER = cstring"logged in"
 const AS_ADMIN = cstring"logged in as admin"
 
+#[
 type AppSettingData = ref object of AppSetting
   updatedValue: JsObject
 
@@ -55,15 +56,7 @@ SettingsManager.onbeforeupdate = beforeUpdateHook:
   vnode.state.allowRedraw = false
   
 
-proc reload {.async.} =
-  echo "reloading page"
-  try:
-    discard (await mrequest(apiPrefix"restart", Post))
-  except:
-    discard
-  finally:
-    discard setTimeout(cint 2000, location.reload.bind(window.location).to(TimeoutFunction))
-    
+   
 SettingsManager.view = viewFn(SettingsManagerState):
   let commitChanges = eventHandlerAsync:
     e.redraw = false
@@ -136,7 +129,7 @@ SettingsManager.view = viewFn(SettingsManagerState):
       else: mchildren()
     )
   else: mchildren()
-
+]#
 type OTPUserGeneratorState = ref object
   allowAccountCreation, isAdmin: bool
   copyElement: JsObject
@@ -263,10 +256,11 @@ var UserMenu* = MComponent()
 
 UserMenu.oninit = lifecycleHook(UserMenuState):
 
-  var loginStatus = LOGGED_OUT
-  var authMethod = 0
+  #var loginStatus = LOGGED_OUT
+  #var authMethod = 0
 
   
+  #[
   try:
     let response = await mrequest(apiPrefix"users/me")
     if isTruthy response.isAdmin:
@@ -283,22 +277,23 @@ UserMenu.oninit = lifecycleHook(UserMenuState):
   #state = UserMenuState(loginStatus: loginStatus, authMethod: authMethod, ready: true)
   state.loginStatus = loginStatus
   state.authMethod = authMethod
+  ]#
 
   state.ready=true
   
 
 UserMenu.view = viewFn(UserMenuState):
-  let onclickLogout = eventHandlerAsync:
+  let onclickLogout = eventHandler:
     e.preventDefault()
-    discard await mrequest(apiPrefix"/logout", Post)
-    mrouteset(getPath())
+    discard logout()
 
   mdiv(
-    a {class: "spacer", style: "margin: 1em"},
+    a {class: "spacer", style: "margin: 1em auto; max-width: 1200px"},
     mul(
-      a {style: "font-size: 1.2em"}, 
+      a {style: "font-size: 1.2em"},
       block login:
-        if state.isLoggedIn:
+        #if state.isLoggedIn:
+        if isLoggedIn():
           mli ma(
             a {href: "#", onclick: onclickLogout}, "Logout"
           )
@@ -308,7 +303,8 @@ UserMenu.view = viewFn(UserMenuState):
           )
       ,
       block register:
-        if state.isRegistered or not state.canRegister:
+        #if state.isRegistered or not state.canRegister:
+        if isRegistered() or not canRegister():
           mchildren()
         else:
           mli m(mrouteLink,
@@ -316,7 +312,8 @@ UserMenu.view = viewFn(UserMenuState):
           )
     ),
     block admin:
-      if state.isAdmin:
+      if isAdmin():
+      #if state.isAdmin:
         m(AdminPanel)
       else:
         mchildren()

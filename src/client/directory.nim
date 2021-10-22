@@ -62,7 +62,7 @@ BreadCrumbs.view = viewFn:
   mdiv(
     m(mrouteLink,
       a {href: cstring"/?" & mbuildQueryString(query)},
-      "/home"
+      mimg(a {style: "margin-bottom: -5px;", src: staticResource"/images/home.svg"})
     ),
 
     block:

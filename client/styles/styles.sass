@@ -32,21 +32,38 @@ main
   justify-content: space-between
 
 nav
-  width: 3em
+  width: 4em
   display: inline-flex
   flex-direction: column
   justify-content: center
   height: 100%
   align-items: flex-end
   background: $background_secondary
+  position: relative
 
+.restart-container
+  position: absolute
+  cursor: pointer
+  top: 0 
+  left: 0.4em
+.restart-container > img
+  padding: 0.5em 0.2em 0
+  box-sizing: border-box
+  filter: brightness(2) drop-shadow(0px 0px 0.7px #0008)
+
+.logout-container
+  cursor: pointer
+  position: absolute
+  bottom: 0
+  left:0.25em
 
 nav img
   width: 3em
-  padding: 0.5 0em
+  padding: 0.5 0.25em
   height: auto
-  filter: drop-shadow(2px 2px 2px #000b)
-  //filter: invert(0.9)
+  //filter: drop-shadow(2px 2px 2px #000b)
+  filter: drop-shadow(0px 0px 0.7px #0008)
+  opacity: 0.88
 
 
 img.thumbnail-large
@@ -59,6 +76,35 @@ img.thumbnail-large
   left: 0
   position: absolute
   
+.tab-select
+  display: flex
+  text-align: center
+  margin: 1em
+.tab-select > .selection, .tab-select > .title
+  flex-grow: 1
+  padding: 0.5em 0
+  box-shadow: 0 1px 2px grey
+  text-transform: capitalize
+
+.tab-select > .title
+  background-color: #ebebeb
+
+.tab-select > .selection
+  cursor: pointer
+
+.tab-select > .active
+  background-color: #8ed9ea
+
+.log
+  font-family: monospace
+  white-space: pre-wrap
+  font-size: 0.8em
+  margin: 1em 
+  box-shadow: 0 1px 3px grey
+  padding: 1em
+  line-height: 1.25
+  font-weight: lighter
+
 
 img.thumbnail-tiny
   width: 3em
@@ -121,6 +167,9 @@ div.entry-list
   //justify-content: space-between
   overflow: hidden auto
   background-color: $background_primary
+
+div.entry-list.table
+  overflow: auto auto
 
 div.entry-list:before
   margin-top: 3em
@@ -388,8 +437,24 @@ div.login-form form
 div.login-form h5
   margin-block-end: 0
 
-div.login-form input
+//div.login-form input
   margin: 1em
+
+.fancy-field-container
+  margin: 1em 2em
+  position: relative
+
+.fancy-field-container > img
+  position: absolute
+  width: 0.8em
+  left: 0.4em
+  top: 0.65em
+
+.fancy-field-container > input
+  width: 100%
+  padding-left: 1.5em
+
+  
 
 div.form-wrapper
   //background-color: white
@@ -432,7 +497,7 @@ input[type="submit"], button
     width: min(100%, 392px)
   
   nav
-    flex-direction: row
+    flex-direction: row-reverse
     width: unset
     height: 3em
     width: 100%
@@ -487,6 +552,30 @@ div.download-progress-indicator
 @media only screen and (max-width: 600px)
   div.download-progress-indicator
     justify-content: center
+
+
+  .restart-container
+    position: static
+    cursor: pointer
+    top: unset
+    left: unset
+
+
+  .restart-container > img
+    padding: 0.5em 0.2em 0
+    box-sizing: border-box
+    //filter: brightness(2) drop-shadow(2px 2px 2px #000b)
+
+  .restart-container > span
+    display: none !important
+  
+  .logout-container
+    cursor: pointer
+    position: static
+    bottom: unset
+    left: unset
+
+
   
 //img[src$=".svg"] 
   //filter: invert(0.9)

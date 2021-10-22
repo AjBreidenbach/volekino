@@ -15,6 +15,28 @@ Login.oncreate = lifecycleHook:
   state.otpField = vnode.dom.querySelector(cstring("input[name='otp']"))
   state.errorMessage = cstring""
 
+proc fancyField(inputAttrs: JsAssoc[cstring, JsObject], image:cstring=""): VNode =
+  mdiv(
+    a {class: "fancy-field-container"},
+    mimg(a {src: staticResource(image)}),
+    minput(inputAttrs)
+  )
+
+#[
+proc loginField(placeholder: cstring = "Login"): VNode =
+  mspan(
+    a {class: "field-container"},
+    mimg(a {src: staticResource"/images/username-field.svg"}),
+    minput(a {placeholder: "Login", type: "text"})
+  )
+proc passwordField(placeholder: cstring = "Password", name: cstring=""): VNode =
+  mspan(
+    a {class: "field-container"},
+    mimg(a {src: staticResource"/images/username-field.svg"}),
+    minput(a {placeholder: "Password", type: "password"})
+  )
+  ]#
+
 Login.view = viewFn(LoginState):
   let handleLogin = eventHandlerAsync:
     e.preventDefault()
@@ -33,7 +55,9 @@ Login.view = viewFn(LoginState):
       discard setTimeout(
         cint 100,
         TimeoutFunction(
-          proc(): void = mrouteset("/")
+          proc(): void =
+            mrouteset("/")
+            location.reload()
         )
       )
 
@@ -50,8 +74,10 @@ Login.view = viewFn(LoginState):
       mh2("Login"),
       mform(
         mh5("Enter your login and password"),
-        minput(a {placeholder: "Login", type: "text"}),
-        minput(a {placeholder: "Password", type: "password"}),
+        fancyField(a {placeholder:"Login", type:"text"}, image="/images/username-field.svg"),
+        #minput(a {placeholder: "Login", type: "text"}),
+        fancyField(a {placeholder:"Password", type:"password"}, image="/images/password-field.svg"),
+        #minput(a {placeholder: "Password", type: "password"}),
 
         mcenter(
           a {style: "text-decoration-line: underline; "},
@@ -59,7 +85,10 @@ Login.view = viewFn(LoginState):
         ),
 
         mh5("Use a one-time password"),
-        minput(a {tabindex: -1, placeholder: "OTP Login", name: "otp", type: "text"}),
+        #passwordField(placeholder="OTP Login", name="otp")
+        fancyField(a {tabindex: -1, placeholder: "OTP Login", name: "otp", type: "text"}, image="/images/password-field.svg"),
+        #minput(a {tabindex: -1, placeholder: "OTP Login", name: "otp", type: "text"}),
+
         minput(a {style: "margin: 1em auto; width: 175px", onclick: handleLogin, type: "submit", value: "Login"})
       ),
       mcenter(

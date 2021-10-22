@@ -3,7 +3,7 @@ import mithril
 #import asyncjs
 import mithril/common_selectors
 import client/[jsffi, util, wsdispatcher, store, globals]
-import client/[directory, convert, progress, login, user_menu, media, addmedia]
+import client/[directory, convert, progress, login, user_menu, media, addmedia, log_view, sidenav]
 import common/library_types
 
 let mountPoint = document.querySelector(cstring"#mount")
@@ -20,7 +20,7 @@ if baseQueryString.len == 29:
 #else:
   #dlog(cstring "query = " & baseQueryString)
   
-
+#[
 var SideNav = MComponent()
 SideNav.view = viewFn(MComponent):
   let query = getQuery()
@@ -64,7 +64,7 @@ SideNav.view = viewFn(MComponent):
       mimg(a {src: staticResource"/images/settings.svg"})
     )
   )
-  
+]# 
 
 proc wrapPage(selector: MithrilSelector): MithrilSelector =
   #let sideNav = m(SideNav)
@@ -106,7 +106,8 @@ block:
       "/register": wrapPage Registration,
       "/user-menu": wrapPage UserMenu,
       "/add": wrapPage AddMediaView,
-      "/debug": wrapPage Debug
+      "/debug": wrapPage Debug,
+      "/logs": wrapPage LogView
 
     }
   )

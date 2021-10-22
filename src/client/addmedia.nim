@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors, ./jsffi
-import progress, store, ./globals
+import progress, store, ./globals, ./folder_select
 import ../common/library_types
 import strformat
 
@@ -134,6 +134,8 @@ AddMediaView.view = viewFn:
 
   mdiv(
     a {style: "margin: 3em auto; width: min(100%, 600px)"} ,
+    m(FolderSelectForm),
+    mcenter(a {style: "margin: 2em; display:flex;"}, mhr(a {style: "flex-grow: 5; opacity: 0.5;"}), mspan(a {style: "flex-grow: 1;"}, "or"), mhr(a {style: "flex-grow: 5; opacity: 0.5;"})),
     mh5(a {style:"margin: 1em 0 0 0; text-align: center"}, "Enter a url to download"),
     mform(
       mlabel(
@@ -142,7 +144,7 @@ AddMediaView.view = viewFn:
       ),
       mcenter(
         mh6(a {style:"margin: 0.5em 0 0.75em 0"}, "Magnet urls and http(s) urls are supported"),
-        minput(a {style:"width:200px", type:"submit", value:"Add", onclick:addDownload})
+        minput(a {style:"width:200px;max-width:unset;", type:"submit", value:"Add", onclick:addDownload})
       )
       
     ),

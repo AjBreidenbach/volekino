@@ -1,6 +1,5 @@
 import volekino/globals
-import asyncdispatch, os, db_sqlite, sqlite3, strutils, json, osproc
-from uri import nil
+import asyncdispatch, asyncfile, os, db_sqlite, sqlite3, strutils, json, osproc
 import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
@@ -18,11 +17,6 @@ var conf: VoleKinoConfig
 
 type SessionContext = ref object of Context
   sessionState: SessionState
-
-when defined(windows):
-  discard#import winlean
-else:
-  import posix
 
 
 proc userGetSelf(ctx: SessionContext) {.async, gcsafe.} =
@@ -43,6 +37,21 @@ proc postUsers(ctx: SessionContext) {.async.} =
 proc getDownloads(ctx: SessionContext) {.async.} =
   let downloads = downloadsDb.getDownloads()
   resp jsonResponse(% downloads)
+
+proc getLog(ctx: SessionContext) {.async, gcsafe.} =
+  let 
+    logname = ctx.getPathParams("logname", "volekino")
+    filename = case logname:
+    of "apache": "error_log"
+    of "transmission", "ssh": logname
+    else: "volekino"
+  var log = openAsync(LOG_DIR / filename, fmRead)
+  let contents = await readAll(log)
+
+  # workaround until added deserialize to mithril wrapper
+  resp jsonResponse(%* {"contents": contents})
+      
+
 
 
 proc postRestart(ctx: SessionContext) {.async, gcsafe.} =
@@ -334,7 +343,8 @@ proc main(
   syncOnly=false,
   guiOnly=false,
   tunnelOnly=false,
-  settings=false
+  settings=false,
+  e=false
   ) =
   inc run
   if printDataDir:
@@ -361,7 +371,6 @@ proc main(
       dbConn: DbConn
       exitStatus = 0
     while true:
-      echo "trying sync"
       try:
         dbConn = initDb(USER_DATA_DIR)[1]
         conf = loadConfig(appSettings)
@@ -415,14 +424,16 @@ proc main(
     elif settings:
       applyInputSettings()
     let
-      daemon = invokeSelf(false, params)
+      daemon = invokeSelf(e, params)
 
-    asyncCheck asyncPipe(daemon, LOG_DIR / "volekino")
+    if not e: asyncCheck asyncPipe(daemon, LOG_DIR / "volekino")
 
     writePID(daemon.processId)
     while daemon.running:
-              
-      poll(1000)
+      if e:
+        sleep 1000
+      else:
+        poll(1000)
       case getDaemonStatus():
       of "restart":
         styledecho fgRed, "restart"
@@ -538,15 +549,15 @@ proc main(
     app.post("/users", postUsers, middlewares= @[authenticateUser(requireAdmin=true)])
     app.get("/settings", getSettings, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/settings", postSettings, middlewares= @[authenticateUser(requireAdmin=true)])
-    #app.get("/user/me")
     app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/convert", postConvert, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/login", login)
     app.get("/downloads", getDownloads, middlewares= @[authenticateUser(requireLogin=requireAuth)])
+    app.get("/logs/{logname}", getLog, middlewares=(@[authenticateUser(requireAdmin=true)]))
     app.post("/downloads", postDownloads, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/register", registerUser)
-    app.post("/restart", postRestart)#, middlewares= @[restartMiddleWare])
-    app.post("/shutdown", postShutdown)#, middlewares= @[restartMiddleWare])
+    app.post("/restart", postRestart, middlewares= @[authenticateUser(requireAdmin=true)])
+    #app.post("/shutdown", postShutdown)#, middlewares= @[restartMiddleWare])
     app.post("/logout", logout)
     if sync:
       runSync()

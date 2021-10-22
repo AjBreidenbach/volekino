@@ -29,6 +29,7 @@ type AppSetting* = ref object of RootObj
   value*: Dynamic
   description*: StringImpl
   selector*: StringImpl
+  category*: StringImpl
   requiresRestart*: bool
 
 type CreateUserRequest* = object

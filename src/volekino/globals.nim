@@ -66,7 +66,6 @@ proc shutdown* =
   runShutdownHandlers()
   writeFile VOLEKINO_STATUS, "shutdown"
 
-
 proc clearDaemonStatus* =
   removeFile VOLEKINO_STATUS
 
