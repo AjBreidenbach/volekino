@@ -60,6 +60,11 @@ proc loadLoginStatus() {.async.} =
 
   except: discard
 
+let baseQueryString = decodeURIComponent(location.search.to(cstring))
+if baseQueryString.len == 29:
+  dlog(cstring "query = " & baseQueryString)
+  document.cookie = cstring"session="& decodeURIComponent(location.search.to(cstring).slice(1))
+
 discard loadLoginStatus()
 
 proc isLoggedIn*(): bool =

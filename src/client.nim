@@ -13,10 +13,6 @@ view(Page404):
   mh1("page not found")
 
 
-let baseQueryString = decodeURIComponent(location.search.to(cstring))
-if baseQueryString.len == 29:
-  dlog(cstring "query = " & baseQueryString)
-  document.cookie = cstring"session="& decodeURIComponent(location.search.to(cstring).slice(1))
 #else:
   #dlog(cstring "query = " & baseQueryString)
   
