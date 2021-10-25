@@ -77,7 +77,7 @@ SettingsManager.view = viewFn(SettingsManagerState):
     state.showingCateogry = selection
   if state.ready:
     mchildren(
-      mdiv(m(TabSelect, a {callback: cb, selections: @[cstring"main", cstring"content", cstring"advanced"]})),
+      mdiv(m(TabSelect, a {title: "Settings", titleIcon: staticResource"/images/settings2.svg", callback: cb, selections: @[cstring"main", cstring"content", cstring"advanced"]})),
       mtable(
         a {class: "admin-settings"},
         mtr(mth"Setting", mth"Description",  mth"Default", mth"Value"),

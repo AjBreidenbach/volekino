@@ -195,7 +195,7 @@ OTPUserGenerator.view = viewFn(OTPUserGeneratorState):
     
   mdiv(
     a {style: "width: 400px; margin: 2em 0;"},
-    mh6("User creation"),
+    mh6(a {style: "font-size: 1em; display: flex; justify-content: center; align-items: center;1em"}, "User creation", mimg(a {src: staticResource"/images/adduser.svg"})),
 
     mform(
       a {style: "position: relative"},
@@ -224,7 +224,7 @@ var AdminPanel = MComponent()
 AdminPanel.view = viewFn(AdminPanelState):
   mdiv(
     a {style: "margin: 2em 1em;"},
-    mh5("Admin panel"),
+    mh5(a {style: "font-size: 1.2em"}, "Admin panel"),
     m(OTPUserGenerator),
     m(SettingsManager)
   )
@@ -283,14 +283,18 @@ UserMenu.oninit = lifecycleHook(UserMenuState):
   
 
 UserMenu.view = viewFn(UserMenuState):
+  #[
   let onclickLogout = eventHandler:
     e.preventDefault()
     discard logout()
+  ]#
 
   mdiv(
     a {class: "spacer", style: "margin: 1em auto; max-width: 1200px"},
     mul(
       a {style: "font-size: 1.2em"},
+
+      #[
       block login:
         #if state.isLoggedIn:
         if isLoggedIn():
@@ -301,7 +305,9 @@ UserMenu.view = viewFn(UserMenuState):
           mli m(mrouteLink,
             a {href: "/login"}, "Login"
           )
+
       ,
+      ]#
       block register:
         #if state.isRegistered or not state.canRegister:
         if isRegistered() or not canRegister():

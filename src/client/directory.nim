@@ -55,8 +55,17 @@ BreadCrumbs.view = viewFn:
   var query = getQuery()
   let search = query.search.to(cstring)
   #console.log(search)
-  if (isFalsey search) or not (cstring"/" in search):
+  if (isFalsey search):
     return mchildren()
+  elif not (cstring"/" in search):
+    discard jsDelete query.search
+    return mdiv(
+      m(mrouteLink,
+        a {href: cstring"/?" & mbuildQueryString(query)},
+        mimg(a {style: "margin-bottom: -5px;", src: staticResource"/images/home.svg"})
+      )
+    )
+    
   discard jsDelete query.search
   
   mdiv(

@@ -9,7 +9,7 @@ proc wrapDetail[T](detail: T): JsObject =
 
 proc newCustomEvent(eventName: cstring, detail: JsObject): JsObject {.importc: "new CustomEvent".}
 proc windowDispatchEvent(event: JsObject) {.importc: "window.dispatchEvent".}
-proc dispatchEvent[T](eventName: cstring, detail: T) =
+proc dispatchEvent*[T](eventName: cstring, detail: T) =
   windowDispatchEvent(
     newCustomEvent(eventName, wrapDetail detail)
   )
@@ -42,7 +42,7 @@ proc sendEvent*[T](eventName: cstring, detail: T) =
 
 proc windowAddEventListener(event: cstring, callback: JsObject) {.importc: "window.addEventListener".}
 
-template addEventListener*(event: cstring, eventType: typed, body: untyped): (string | cstring, JsObject) {.dirty.} =
+template addEventListener*(event: cstring, eventType: typed, body: untyped): (cstring, JsObject) {.dirty.} =
   block:
     bind windowAddEventListener
     let callback = proc(e: JsObject) =

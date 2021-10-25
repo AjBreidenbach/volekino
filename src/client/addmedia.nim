@@ -1,11 +1,12 @@
 import mithril, mithril/common_selectors, ./jsffi
 import progress, store, ./globals, ./folder_select
 import ../common/library_types
-import strformat
+import strformat, sequtils
+import wsdispatcher
 
 var ignoreJobs = newJsSet()
 
-var DownloadProgressIndicator, DownloadProgressPopupView*, DownloadProgressDefaultView, AddMediaView* = MComponent()
+var DownloadProgressIndicator, DownloadProgressPopupView*, DownloadProgressDefaultView, AddMediaView*, AddedMediaList = MComponent()
 
 var 
   ongoingDownloads: seq[Download]
@@ -122,12 +123,83 @@ DownloadProgressIndicator.view = viewFn:
     )
   )
   
+type AddedMediaListState = ref object
+  list: seq[AddedMediaEntry]
+  listener: tuple[event: cstring, handler: JsObject]
+
+proc populate(state: var AddedMediaListState) {.async.} =
+  state.list = (await mrequest(apiPrefix"shared-media")).to(seq[AddedMediaEntry])
+  state.list.sort do (a, b: AddedMediaEntry) -> int:
+    a.kind - b.kind
+
+proc remove(state: var AddedMediaListState, media: cstring) {.async.} =
+  discard (await mrequest(apiPrefix("shared-media/" & encodeUriComponent(media)), Delete, background=true))
+  await state.populate()
+
+  
+  
+AddedMediaList.oninit = lifecycleHook(AddedMediaListState):
+    
+  state.list = @[]
+  discard state.populate()
+  # I don't think this assignment works
+  state.listener = (
+    addEventListener(cstring"updatemedialist", JsObject) do:
+    discard state.populate()
+  )
+
+#AddedMediaList.oncreate = lifecycleHook(AddedMediaListState):
+  
+#  console.log(cstring"oncreate", state)
+
+#[
+AddedMediaList.onremove = lifecycleHook(AddedMediaListState):
+  console.log(state)
+  removeEventListener(state.listener)
+]#
+
+AddedMediaList.view = viewFn(AddedMediaListState):
+  
+  proc removeMediaHandler(media: cstring): EventHandler =
+    return eventHandler:
+      discard state.remove(media)
+      e.redraw = false
+  if state.list.len > 0:
+    result = mdiv(
+      mh4("Added media"),
+      mul(
+        a {style: "list-style-type: none;"},
+          state.list.mapIt(
+            block:
+              var remove: EventHandler
+              closureScope:
+                let media = it.name
+                remove = removeMediaHandler(media)
+                                  
+              mli(
+                a {style: "display: flex; align-items: center; margin: 0.5em;"},
+                mimg(a {onclick: remove, style: "cursor: pointer; width: 1em; padding: 0.25em;", src: staticResource"/images/cancel.svg"}),
+                case it.kind
+                of MediaMediaEntry:
+                  mimg(a {style: "width: 1em;", src: staticResource"/images/media.svg"})
+                of DirMediaEntry:
+                  mimg(a {style: "width: 1em;", src: staticResource"/images/open-folder.svg"})
+                of TorrentEntry:
+                  mimg(a {style: "width: 1em; padding: 0.25em;", src: staticResource"/images/torrent.svg"})
+                else: mimg()
+                ,
+                it.name
+              )
+          )
+      )
+    )
 
 AddMediaView.view = viewFn:
   let addDownload = eventHandlerAsync:
     let input = vnode.dom.querySelector("input[type='url']")
     let request = DownloadRequest(url: input.value.to(cstring))
-    console.log (await mrequest(apiPrefix"downloads", Post, toJs request))
+    discard (await mrequest(apiPrefix"downloads", Post, toJs request))
+
     if timeout != -1:
       clearTimeout(timeout)
     discard loop()
@@ -156,8 +228,10 @@ AddMediaView.view = viewFn:
           DownloadProgressDefaultView
         )
       else: nil
-    )
+    ),
     
-    #m(DownloadProgressIndicator, a {resourceName: "Archer Season 4", progress: "50"})
+    m(AddedMediaList)
+    
+   #m(DownloadProgressIndicator, a {resourceName: "Archer Season 4", progress: "50"})
   )
 

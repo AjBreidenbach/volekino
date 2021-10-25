@@ -61,6 +61,7 @@ proc displayDuration(dur: int): string =
 var image404 = newJsSet()
 
 let onSourcelessImage = eventHandler:
+  
   image404.incl e.target.src.to(cstring)
   e.target.src = staticResource"/images/film-frames.svg"
    
@@ -72,7 +73,12 @@ proc toThumbnailView(entry: Entry, class, imageSource, pathToVideo, directoryPat
     m(mrouteLink, a {href: pathToVideo, class: "nodecorate"},
     mdiv(
       a {class: "entry-thumbnail-container"},
-        mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource, error: (if imageSource.len > 0: onSourcelessImage else: nil)}),
+        (
+          if imageSource.len > 0:
+            mimg(a {loading: "lazy", class: "thumbnail-large", src: imageSource, onerror: onSourcelessImage})
+          else:
+            mimg(a {loading: "lazy", class: "thumbnail-large", src: staticResource"/images/film-frames.svg"})
+        ),
         mdiv(
           a {class: "title"},
           entry.pathTail#,
@@ -137,7 +143,7 @@ proc toTableRowView(entry: Entry, class, imageSource, pathToVideo, directoryPath
     ),
     mtd(
       m(mrouteLink, a {href: pathToVideo, class: "flex-cell"},
-        mimg(a {loading: "lazy", class: "thumbnail-tiny", src: imageSource, error: (if imageSource.len > 0: onSourcelessImage else: nil)}),
+        mimg(a {loading: "lazy", class: "thumbnail-tiny", src: imageSource, onerror: (if imageSource.len > 0: onSourcelessImage else: nil)}),
         entry.pathTail
       )
     ),
@@ -221,12 +227,15 @@ converter toVNode*(entries: seq[Entry]): VNode =
 
         if entry.containingDirectory.len > 0:
           entryNodes.add(
-            m(mrouteLink,
-              a {href: directoryPath},
-              mh2(
-                a {style: "text-align: left; display: inline-flex; align-items: center; margin: 1em 1em 0 1em; font-size: 1.3em; font-weight: 400;"},
-                entry.containingDirectory,
-                mimg(a {src: staticResource"/images/open-folder.svg"})
+            mdiv(
+              a {style: "display: block;"},
+              m(mrouteLink,
+                a {href: directoryPath},
+                mh2(
+                  a {style: "text-align: left; display: inline-flex; align-items: center; margin: 1em 1em 0 1em; font-size: 1.3em; font-weight: 400;"},
+                  entry.containingDirectory,
+                  mimg(a {src: staticResource"/images/open-folder.svg"})
+                )
               )
             )
           )

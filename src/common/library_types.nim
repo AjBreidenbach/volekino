@@ -91,3 +91,28 @@ proc videoCodecsAvailableForContainer*(this: StringImpl, encoders: seq[StringImp
 type SubtitleTrack* = object of RootObj
   uid*, lang*, title*: StringImpl
   #entryId: int16
+
+
+type FileEntryType* = distinct int
+const
+  InvalidFileEntry* = FileEntryType -1
+  MediaFileEntry* = FileEntryType 0
+  DirFileEntry* = FileEntryType 1
+
+type FileEntry* = ref object
+  filename*: StringImpl
+  kind*: FileEntryType
+  lastModified*: float
+
+type MediaEntryType* = distinct int
+const
+  InvalidMediaEntry* = MediaEntryType -1
+  MediaMediaEntry* = MediaEntryType 0
+  DirMediaEntry* = MediaEntryType 1
+  TorrentEntry* = MediaEntryType 2
+
+  
+type AddedMediaEntry* = ref object
+  name*: StringImpl
+  kind*: MediaEntryType
+converter toInt*(t: FileEntryType | MediaEntryType): int = int (t)

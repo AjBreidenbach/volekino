@@ -1,13 +1,13 @@
 import volekino/globals
-import asyncdispatch, asyncfile, os, db_sqlite, sqlite3, strutils, json, osproc
+import asyncdispatch, asyncfile, os, db_sqlite, sqlite3, strutils, json, osproc, uri
 import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
-import volekino/[userdata, models, config, library, ffmpeg, gui, parse_settings, pipe]
+import volekino/[userdata, models, config, library, ffmpeg, gui, parse_settings, pipe, file_navigation]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
 import volekino/daemons/[httpd, transmissiond, ssh]
 import json
-from common/library_types import ConversionRequest, DownloadRequest
+import common/library_types
 import common/user_types
 import options, times, terminal
 import cligen
@@ -51,8 +51,30 @@ proc getLog(ctx: SessionContext) {.async, gcsafe.} =
   # workaround until added deserialize to mithril wrapper
   resp jsonResponse(%* {"contents": contents})
       
+proc getSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
+  let requestedPath = decodeUrl(ctx.getPathParams("path", ""))
+  resp jsonResponse(% file_navigation.ls(requestedPath))
 
 
+proc postSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
+  let requestedPath = decodeUrl(ctx.getPathParams("path", ""))
+  try:
+    symlinkMedia(requestedPath)
+    resp jsonResponse(%* {"error": nil})
+  except OsError, RecursiveLibraryError:
+    resp jsonResponse(%* {"error": getCurrentExceptionMsg()}, Http500)
+  #resp jsonResponse(%* {"error": nil})
+  
+proc getSharedMedia(ctx: SessionContext) {.async, gcsafe.} =
+  resp jsonResponse(% (await library.getSharedMedia()))
+
+proc deleteSharedMedia(ctx: SessionContext) {.async, gcsafe.} =
+  let requestedMedia = decodeUrl(ctx.getPathParams("media", ""))
+  try:
+    await library.removeSharedMedia(requestedMedia)
+    resp jsonResponse(%* {"error": nil})
+  except:
+    resp jsonResponse(%* {"error": getCurrentExceptionMsg()}, Http500)
 
 proc postRestart(ctx: SessionContext) {.async, gcsafe.} =
   resp "OK"
@@ -552,6 +574,11 @@ proc main(
     app.addRoute("/ws", connectWebSocket, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.post("/convert", postConvert, middlewares= @[authenticateUser(requireAdmin=true)])
     app.post("/login", login)
+    app.get("/files", getSystemFiles, middlewares= @[authenticateUser(requireAdmin=true)])
+    app.get("/files/{path}", getSystemFiles, middlewares= @[authenticateUser(requireAdmin=true)])
+    app.post("/files/{path}", postSystemFiles, middlewares= @[authenticateUser(requireAdmin=true)])
+    app.get("/shared-media", getSharedMedia, middlewares= @[authenticateUser(requireAdmin=true)])
+    app.delete("/shared-media/{media}", deleteSharedMedia, middlewares= @[authenticateUser(requireAdmin=true)])
     app.get("/downloads", getDownloads, middlewares= @[authenticateUser(requireLogin=requireAuth)])
     app.get("/logs/{logname}", getLog, middlewares=(@[authenticateUser(requireAdmin=true)]))
     app.post("/downloads", postDownloads, middlewares= @[authenticateUser(requireAdmin=true)])

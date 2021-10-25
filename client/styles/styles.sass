@@ -3,6 +3,7 @@ $background_secondary: #8ed9ea
 
 $background_primary: #ffffff
 
+@use "./window_select"
 body
   margin: 0px
   //background-color: $background_secondary
@@ -12,8 +13,23 @@ body
 h1
   color: blue
 
+main
+  min-height: 100vh
+
 video
   max-width: 100%
+
+
+.pointer
+  cursor: pointer
+
+
+.noselect 
+  -webkit-user-select: none /* Safari */
+  -moz-user-select: none /* Firefox */
+  -ms-user-select: none /* IE10+/Edge */
+  user-select: none /* Standard */
+
 
 main
   width: 100%
@@ -85,6 +101,9 @@ img.thumbnail-large
   padding: 0.5em 0
   box-shadow: 0 1px 2px grey
   text-transform: capitalize
+  display: flex
+  justify-content: center
+  align-items: center
 
 .tab-select > .title
   background-color: #ebebeb
@@ -289,7 +308,7 @@ img[src$="/images/search.svg"]
   width: 1.5em
   position: absolute
 
-img[src$="/images/open-folder.svg"]
+img[src$="/images/open-folder.svg"], img[src$="/images/media.svg"]
   width: 1.5em
   padding: 0.25em
 
@@ -364,7 +383,6 @@ label
 
 button
   display: inline-flex
-  padding: 0.5em
   outline-width: 0
   border-width: 0
   align-items: center
@@ -476,6 +494,22 @@ form > label
   justify-content: space-between
   align-items: center
 
+
+input[type="checkbox"]
+  appearance: none
+
+input[type="checkbox"]:after
+  content: ""
+  width: 1em
+  height: 1em
+  display: block
+  background-size: contain
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAzLjE3NSAzLjE3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBzdHJva2U9IiNkNWNlY2UiIGZp bGw9Im5vbmUiIHN0cm9rZS13aWR0aD0iLjI2NSIgZD0iTS4xMzIuMTMyaDIuOTF2Mi45MUguMTMyeiIvPjwvc3ZnPg==')
+
+input[type="checkbox"]:checked:after
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAzLjE3NSAzLjE3NSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsPSIjOGVkOWVhIiBzdHJva2U9IiNkNWNlY2UiIHN0cm9rZS13aWR0aD0iLjI2NSIgZD0iTS4xMzIuMTMyaDIuOTF2Mi45MUgu MTMyeiIvPjwvc3ZnPg==')
+
+
 input[type="submit"]
   margin: 0.5em
 
@@ -483,16 +517,19 @@ input[type="submit"], button
   max-width: 160px
   height: 2.2em
   line-height: 1
+  font-family: inherit
   background-color: #8ed9ea
   border-style: none
   font-size: 0.9em
-  font-weight: bold
+  //font-weight: bold
   filter: drop-shadow(0px 5px 2px #bbb)
 
 @media only screen and (max-width: 600px)
   #mount
     flex-direction: column
 
+  main
+    min-height: calc(100vh - 3em)
   //div.entry
     width: min(100%, 392px)
   

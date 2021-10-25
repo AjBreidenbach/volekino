@@ -8,13 +8,15 @@ import ffmpeg
 import asyncdispatch
 import ../common/library_types
 
+import library/shared_media
+export shared_media
 import mimetypes
 
 let mimes = newMimetypes()
 
 iterator mediaFiles: string =
   #TODO make following symlinks optional
-  for file in walkDirRec(mediaDir, followFilter = {pcDir, pcLinkToDir}, relative = true):
+  for file in walkDirRec(mediaDir, yieldFilter = {pcFile, pcLinkToFile}, followFilter = {pcDir, pcLinkToDir}, relative = true):
     let fullPath = mediaDir / file
     let ext = splitFile(fullPath)[2]
     let mime = mimes.getMimetype(ext)

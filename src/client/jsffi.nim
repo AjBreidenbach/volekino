@@ -2,7 +2,10 @@ import std/jsffi as stdjsffi
 export stdjsffi
 import asyncjs
 
+proc startsWith*(s1,s2:cstring):bool {.importcpp.}
+proc endsWith*(s1,s2:cstring):bool {.importcpp.}
 proc encodeURI*(s:cstring):cstring {.importc.}
+proc encodeURIComponent*(s:cstring):cstring {.importc.}
 proc newRegExp*(pattern: cstring, modifiers: cstring = ""): JsObject {.importcpp: "new RegExp(@)".}
 proc replace*(s:cstring, pattern: cstring | JsObject, replacement:cstring):cstring {.importcpp.}
 proc split*(s: cstring, pattern: JsObject | cstring ): seq[cstring] {.importcpp.}
@@ -26,10 +29,18 @@ type AsyncTimeoutFunction* = proc(): Future[void]
 proc setTimeout*(timeoutFunction: TimeoutFunction | AsyncTimeoutFunction, timeoutDuration: cint): cint {.importc.}
 proc setTimeout*(timeoutDuration: cint, timeoutFunction: TimeoutFunction | AsyncTimeoutFunction): cint =
   setTimeout(timeoutFunction, timeoutDuration)
+
+template timeout*(timeoutDuration: int, body: untyped): untyped =
+  setTimeout(
+    timeoutDuration,
+    TimeoutFunction ( proc: void = (body) )
+  )
   
 proc clearTimeout*(timeoutHandle: cint) {.importc.}
 proc slice*(s:cstring,i:cint):cstring {.importcpp.}
 proc slice*(s:cstring,i,j:cint):cstring {.importcpp.}
+proc slice*[T](s: seq[T],i:cint):seq[T] {.importcpp.}
+proc slice*[T](s: seq[T],i,j:cint):seq[T] {.importcpp.}
 converter toCstring(c: char): cstring {.importc: "String.fromCharCode".}
 proc rfind*(s:cstring,c:cstring): cint {.importcpp: "lastIndexOf".}
 proc rfind*(s:cstring,c:char): cint = rfind(s,cstring c)
@@ -38,7 +49,7 @@ proc sort*[T](a: var openArray[T], cmp: proc (x, y: T): int) {.importcpp.}
 proc decodeURI*(s:cstring):cstring {.importc.}
 proc decodeURIComponent*(s:cstring):cstring {.importc.}
 proc deepCopy*[T](y: seq[T]): seq[T] {.importcpp: "slice".}
-
+proc newDate*[T](t: T): JsObject {.importcpp: "new Date(#)".}
 
 var JSON* {.importc.} : JsObject
 proc parseFloat*(s: cstring): float {.importc.}

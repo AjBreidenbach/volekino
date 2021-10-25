@@ -7,6 +7,7 @@ var TabSelect* = MComponent()
 type TabSelectState = ref object
   currentSelection: cstring
   title: cstring
+  titleIcon: cstring
   selections: seq[cstring]
   callback: proc(selection: cstring): void
 
@@ -15,6 +16,7 @@ TabSelect.oninit = lifecycleHook(TabSelectState):
   state.selections = vnode.attrs.selections.to(seq[cstring])
   state.callback = vnode.attrs.callback.to(type state.callback)
   state.title = vnode.attrs.title.to(cstring)
+  state.titleIcon = vnode.attrs.titleIcon.to(cstring)
   if isFalsey state.selections:
     state.selections = @[]
   else: state.currentSelection = state.selections[0]
@@ -28,7 +30,17 @@ TabSelect.oninit = lifecycleHook(TabSelectState):
 TabSelect.view = viewFn(TabSelectState):
   mdiv(
     a {class:"tab-select"},
-    mdiv(a {class:"title"}, state.title),
+    mdiv(
+      a {class:"title"},
+      state.title,
+      (
+        if isTruthy state.titleIcon:
+          mimg(a {src: state.titleIcon})
+        else:
+          mchildren()
+      )
+
+    ),
     mchildren(
       state.selections.mapIt(
         block:
