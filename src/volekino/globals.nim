@@ -14,16 +14,19 @@ let
   TMP_DIR* = tmpDir
   LOG_DIR* = USER_DATA_DIR / "logs"
   dbPath* = joinPath(USER_DATA_DIR, "volekino.db")
-  VOLEKINO_PID* = USER_DATA_DIR / "volekino.pid"
+  VOLEKINO_PID* = TMP_DIR / "volekino.pid"
+  TRANSMISSION_PID* = TMP_DIR / "transmission.pid"
+  APACHE_PID* = TMP_DIR / "httpd.pid"
   VOLEKINO_STATUS* = TMP_DIR / "volekino_daemon"
 
 createDir(LOG_DIR)
 
 when defined(windows):
-  import psutil/psutil_windows
+  import psutil/psutil_windows as psutil
 else:
-  import psutil/psutil_linux
+  import psutil/psutil_linux as psutil
 
+export psutil
 
 
 
