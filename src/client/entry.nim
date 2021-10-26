@@ -274,65 +274,65 @@ converter toVNode*(entries: seq[Entry]): VNode =
     selected = newJsSet()
 
   var class = cstring"entry-list spacer"
-  #if shouldDisplayTable:
-  #  class &= cstring" table"
+  if shouldDisplayTable:
+    class &= cstring" table"
   result = mdiv(
     a {class: class, style: entryListStyle},
     (
       if shouldDisplayTable:
-        mdiv(
-        a {style: "width: 100%; overflow-x: scroll"},
-          mtable(
-            mthead(
-              mtr(
-                a {style: "height: 3em"},
-                mchildren(
-                  mth(
-                    a {colspan: 2, style: "position: relative"},
-                    (
-                      if selected.len > 0:
-                        mdiv(
-                          a {style: "font-size: 0.5em; position: absolute;", class: "table-view-context-menu"},
-                          mimg(a {src: staticResource"/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
-                          mimg(a {class: "disabled", src: staticResource"/images/exchange.svg", style: "width: 2.5em"}),
-                          mimg(a {src: staticResource"/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
-                        )
-                      else: mchildren()
-                    ),
-                    "Media"
+        #mdiv(
+        #a {style: "width: 100%; overflow-x: scroll"},
+        mtable(
+          mthead(
+            mtr(
+              a {style: "height: 3em"},
+              mchildren(
+                mth(
+                  a {colspan: 2, style: "position: relative"},
+                  (
+                    if selected.len > 0:
+                      mdiv(
+                        a {style: "font-size: 0.5em; position: absolute;", class: "table-view-context-menu"},
+                        mimg(a {src: staticResource"/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
+                        mimg(a {class: "disabled", src: staticResource"/images/exchange.svg", style: "width: 2.5em"}),
+                        mimg(a {src: staticResource"/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
+                      )
+                    else: mchildren()
                   ),
-                  mth("Directory"),
-                  mth(mspan(a {class: "flex-cell"}, "Encoding"))
-                )
+                  "Media"
+                ),
+                mth("Directory"),
+                mth(mspan(a {class: "flex-cell"}, "Encoding"))
               )
-              #[
-              mtr(
-                a {style: "height: 3em"},
-                if selected.len == 0:
-                  mchildren(
-                    mth(""),
-                    mth("Media"),
-                    mth("Directory"),
-                    mth("Encoding")
-                  )
-                else:
-                  mth(
-                    a {colspan: 4},
-                    mdiv(
-                      a {class: "table-view-context-menu"},
-                      mimg(a {src: staticResource"/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
-                      mimg(a {class: "disabled", src: staticResource"/images/exchange.svg", style: "width: 2.5em"}),
-                      mimg(a {src: staticResource"/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
-                    )
-                  )
-              )
-              ]#
-            ),
-            mtbody(
-              entryNodes
             )
+            #[
+            mtr(
+              a {style: "height: 3em"},
+              if selected.len == 0:
+                mchildren(
+                  mth(""),
+                  mth("Media"),
+                  mth("Directory"),
+                  mth("Encoding")
+                )
+              else:
+                mth(
+                  a {colspan: 4},
+                  mdiv(
+                    a {class: "table-view-context-menu"},
+                    mimg(a {src: staticResource"/images/cancel.svg", style: "width: 2.5em", onclick: clearSelected}),
+                    mimg(a {class: "disabled", src: staticResource"/images/exchange.svg", style: "width: 2.5em"}),
+                    mimg(a {src: staticResource"/images/delete.svg", style: "width: 2.5em", onclick: deleteSelected})
+                  )
+                )
+            )
+            ]#
+          ),
+          mtbody(
+            entryNodes
           )
         )
+        #)
       else:
         mchildren(
           (

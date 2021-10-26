@@ -180,78 +180,103 @@ Convert.view = viewFn(ConvertState):
 
   let ontoggleExperimentalMode = eventHandler:
     state.experimentalMode = e.target.checked.to(bool)
+  
+  var children: seq[VNode]
 
-  mdiv(
-    a {style: "background-color: white; padding: 1em; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end"},
-    mh6(a {style: "width: 100%"}, state.conversionStatistics.entry.path),
+  children.add mdiv(
+    a {style: "background-color: white; margin: 5em 2em 0 2em; display: flex; flex-wrap: wrap; justify-content: center;"},
+
+    
     mdiv(
-      mlabel(
-        "Container:",
-        mselect(
-          a {value: state.selectedContainer, onchange: onchangeContainer},
-          moption(a {value: "mp4"}, "MP4"),
-          moption(a {value: "webm"}, "WebM"),
-          moption(a {value: "ogg"}, "Ogg")
-        )
-      ),
-      mlabel(
-        "Audio:",
-        (
-          if audioNodes.len > 0:
-            mselect(
-              a {onchange: onchangeAudio},
-              mchildren(audioNodes)
-            )
-          else:
-            mspan("none supported")
-        )
-      ),
-      (
-      if state.conversionStatistics.entry.audioTracks.len > 1:
-        mlabel(
-          "Audio track:",
-          block:
-            var options = newSeq[VNode]()
-            for track in state.conversionStatistics.entry.audioTracks:
-              options.add moption(
-                a {value: track.index},
-                track.title & (if track.title.len > 0: cstring"/" else: cstring"") & track.lang
-              )
-
-            mselect(
-              a {onchange: onchangeAudioTrack},
-              mchildren(options)
-            )
-        )
-      else: mchildren()
-      ),
-      mlabel(
-        "Video:",
-        (
-          if videoNodes.len > 0:
-            mselect(
-              a {onchange: onchangeVideo},
-              mchildren(videoNodes)
-            )
-          else:
-            mspan("none supported")
-        )
-        
-      ),
-      mlabel(
-        "Experimental mode: ",
-        minput(a {type: "checkbox", onchange: ontoggleExperimentalMode})
-      )
+      a {style: "margin: 1em; max-width: 300px;"},
+      mdiv(
+        a {style: "line-break: anywhere; text-align: left; margin: 0.5em 0"},
+        jsffi.split(state.conversionStatistics.entry.path, cstring"/")[^1]
+      ) ,
+      mimg(a {style: "max-width: 100%;", src: staticResource"/thumbnails/" & state.conversionStatistics.entry.uid})
     ),
     mdiv(
+      a {style: "margin: 1em; display: flex; flex-direction: column;"},
+      mdiv(
+        a {style: "margin:auto; display: flex; flex-direction: column; width: min(100vw, 300px)"},
+        mlabel(
+          a {style: "display: inline-flex; justify-content: space-between; align-items: center;"},
+          "Container:",
+          mselect(
+            a {value: state.selectedContainer, onchange: onchangeContainer},
+            moption(a {value: "mp4"}, "MP4"),
+            moption(a {value: "webm"}, "WebM"),
+            moption(a {value: "ogg"}, "Ogg")
+          )
+        ),
+        mlabel(
+          a {style: "display: inline-flex; justify-content: space-between; align-items: center;"},
+          "Audio:",
+          (
+            if audioNodes.len > 0:
+              mselect(
+                a {onchange: onchangeAudio},
+                mchildren(audioNodes)
+              )
+            else:
+              mspan("none supported")
+          )
+        ),
+        (
+        if state.conversionStatistics.entry.audioTracks.len > 1:
+          mlabel(
+            a {style: "display: inline-flex; justify-content: space-between; align-items: center;"},
+            "Audio track:",
+            block:
+              var options = newSeq[VNode]()
+              for track in state.conversionStatistics.entry.audioTracks:
+                options.add moption(
+                  a {value: track.index},
+                  track.title & (if track.title.len > 0: cstring"/" else: cstring"") & track.lang
+                )
+
+              mselect(
+                a {onchange: onchangeAudioTrack},
+                mchildren(options)
+              )
+          )
+        else: mchildren()
+        ),
+        mlabel(
+          a {style: "display: inline-flex; justify-content: space-between; align-items: center;"},
+          "Video:",
+          (
+            if videoNodes.len > 0:
+              mselect(
+                a {onchange: onchangeVideo},
+                mchildren(videoNodes)
+              )
+            else:
+              mspan("none supported")
+          )
+          
+        ),
+        mlabel(
+          a {style: "display: inline-flex; justify-content: space-between; align-items: center;"},
+          "Experimental mode: ",
+          minput(a {type: "checkbox", onchange: ontoggleExperimentalMode})
+        )
+      )
+    )
+  )
+  children.add mdiv(
+    a {style: "width: 100%;display: flex; flex-wrap: wrap; justify-content: center; margin: 1em 0 1em"},
+    mdiv(
+      a {style: "display: flex; flex-direction: column; align-items: center;"},
       mlabel(
+        a {style: "display: inline-flex; align-items: center;"},
         "Remove original:",
         minput(a {type: "checkbox", onchange: ontoggleRemoveOriginal})
       ),
       mbutton(
-        a {style: "width: 7em; background-color: #f07e5c; filter: invert(1)", onclick: initiateConversion},
+        a {style: "width: 7em", onclick: initiateConversion},
         "Convert",
-        mimg(a {class: "spin", src: staticResource"/images/exchange.svg", style: "width: 1.5em"})
+        mimg(a {class: "spin", src: staticResource"/images/exchange.svg", style: "width: 1.5em; filter: brightness(2)"})
       )
       
     ),
@@ -259,22 +284,20 @@ Convert.view = viewFn(ConvertState):
       a {style: "width: 100%;"},
       mtext(info)
     ),
-    mdiv(
-      a {style: "width: 100%;display: flex;align-items: center; margin: 1em 0 1em"},
-      (
-        if state.progress >= 0: mchildren(
-          mspan(a {style: "line-height: 0; margin-right: 1em; font-family: monospace; margin: 0.5em"}, cstring"status: "  & state.status ),
-          m(ProgressBar,
-            a {value: state.progress}
-          )
+    (
+      if state.progress >= 0: mchildren(
+        mspan(a {style: "line-height: 0; margin-right: 1em; font-family: monospace; margin: 0.5em"}, cstring"status: "  & state.status ),
+        m(ProgressBar,
+          a {value: state.progress}
         )
-        else:
-          mdiv(
-            a {style: "font-family: monospace; color: crimson; white-space: break-spaces"},
-            state.error
-            
-          )
       )
-      
+      else:
+        mdiv(
+          a {style: "font-family: monospace; color: crimson; white-space: break-spaces"},
+          state.error
+          
+        )
     )
   )
+
+  mdiv(children)
