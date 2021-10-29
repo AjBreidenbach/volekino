@@ -383,6 +383,7 @@ proc main(
   if populateUserData:
     try:
       userdata.populateFromZip()
+      createDir(LOG_DIR)
     except:
       discard
 
@@ -412,7 +413,8 @@ proc main(
     try:
       discard initDb(USER_DATA_DIR, dbs={0})
       launchWebview()
-    except: styledecho fgRed, "couldn't open db to create session"
+    except:
+      styledecho fgRed, "couldn't open db to create session ", getCurrentExceptionMsg()
     return
   elif tunnelOnly:
     try:
@@ -420,13 +422,13 @@ proc main(
       conf = loadConfig(appSettings)
       discard conf.startSshTunnel()
     except:
-      styledecho fgRed, "couldn't open db to create tunnel?"
+      styledecho fgRed, "couldn't open db to create tunnel? ", getCurrentExceptionMsg()
       styledecho fgRed, getCurrentExceptionMsg()
     return
   if existsEnv("VOLEKINO_DAEMON"):
     discard initDb(USER_DATA_DIR)
+    assert not appSettings.isNil
     conf = loadConfig(appSettings)
-          
   elif volekinoIsRunning():
     if sync:
       runSync()

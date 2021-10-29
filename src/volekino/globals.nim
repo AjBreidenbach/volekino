@@ -19,7 +19,6 @@ let
   APACHE_PID* = TMP_DIR / "httpd.pid"
   VOLEKINO_STATUS* = TMP_DIR / "volekino_daemon"
 
-createDir(LOG_DIR)
 
 when defined(windows):
   import psutil/psutil_windows as psutil

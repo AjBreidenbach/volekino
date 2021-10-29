@@ -79,6 +79,7 @@ task buildDebianTermux, "":
   exec "nimble -d:release buildFrontend"
   exec "nimble -d:release -d:ui_launcher='termux-open-url' -d:termux buildBackend"
   exec "cp dist/volekino debian/volekino-termux_0.1.0_aarch64/data/data/com.termux/files/usr/bin"
+  exec "cp -r /data/data/com.termux/files/usr/local/apache2 debian/volekino-termux_0.1.0_aarch64/data/data/com.termux/files/usr/local/apache2"
   exec "dpkg-deb --build debian/volekino-termux_0.1.0_aarch64/"
 
 

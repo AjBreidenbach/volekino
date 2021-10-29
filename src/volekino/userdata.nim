@@ -36,5 +36,6 @@ else:
       moveDir(tmpDir / "userdata" / "userdata", USER_DATA_DIR)
     except:
       discard
+      #echo "error moving userdata ", getCurrentExceptionMsg()
 
     removeDir(tmpDir / "userdata")

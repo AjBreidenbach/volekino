@@ -3,6 +3,6 @@ Version: 0.1.0
 Architecture: aarch64
 Essential: no
 Priority: optional
-Depends: transmission (>=2.0), openssh (>=1.8)
+Depends: transmission (>=2.0), openssh (>=1.8), libsqlite(>=3.0)
 Maintainer: Andrew Breidenbach
 Description: Stream videos with your mouse friends
