@@ -33,6 +33,7 @@ when isMainModule:
   for (key, value) in parseSettings("""
     port 7000, local-proxy-pass=false ;proxy-server: volekino.abreidenbach.com
     require-auth true
+    proxy-server-token=andrew:abc123
   """):
     echo key, " :: ", value
     

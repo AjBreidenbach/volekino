@@ -26,6 +26,9 @@ proc `port=`*(config: VoleKinoConfig, port: Port) =
   config.appSettings.setProperty($port)
 
 proc loadConfig*(appSettings: AppSettings): VoleKinoConfig =
+  if appSettings.isNil:
+    echo "can't use null appSettings"
+    quit 1
   VoleKinoConfig(appSettings: appSettings)
   
   

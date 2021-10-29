@@ -7,7 +7,8 @@ proc createTable*(db: DbConn): AppSettings =
   db.exec(sql statement)
   AppSettings(db)
 
-
+proc isNil*(db: AppSettings): bool =
+  DbConn(db).isNil
 
 proc setProperty*(db: AppSettings, key: string, value: string = "") =
   const statement = slurp("./statements/appsettings/set.sql")

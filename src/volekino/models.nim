@@ -37,7 +37,7 @@ proc initDb*(path: string, dbs = {0, 1}, retries = 3): tuple[defaultConn, mediaC
       createTables(result[0])
 
     if 1 in dbs:
-     result[1] = open(path / "volekino.db", "", "", "")
+     result[1] = open(path / "volekino_m.db", "", "", "")
      createMediaTables(result[1])
   except DbError:
     if retries > 0:
