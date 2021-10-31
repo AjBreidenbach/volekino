@@ -47,13 +47,24 @@ proc runShutdownHandlers =
 proc invokeSelf*(useParentStreams=true, args: varargs[string]): Process =
   let command = getAppFilename()
   var 
-    env = newStringTable({"VOLEKINO_DAEMON": ""})
+    #env = newStringTable({"VOLEKINO_DAEMON": ""})
+    env = newStringTable()
     #options = {poEchoCmd, poParentStreams, poDaemon, poUsePath}
     options = {poEchoCmd, poDaemon, poUsePath}
   for (key, value) in envPairs():
     env[key] = value
   if useParentStreams:
     options.incl(poParentStreams)
+
+  if existsEnv("VOLEKINO_DAEMON"):
+    discard
+  else:
+    env["VOLEKINO_DAEMON"] = ""
+    let VOLEKINO_OPT = when defined(termux):
+      getEnv("PREFIX") / ".." / "opt" / "volekino" / "bin"
+    else: "/" / "opt" / "volekino" / "bin"
+    env["PATH"] = VOLEKINO_OPT & ':' & getEnv("PATH")
+
   startProcess(command, args=args, options=options, env=env)
 
 proc invokeSelf*(args: varargs[string]): Process =

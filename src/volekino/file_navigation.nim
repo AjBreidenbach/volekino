@@ -1,11 +1,10 @@
 import os, mimetypes, strutils, times, strformat
 import ./globals
 import ../common/library_types
-import terminal
 
 
 
-let 
+let
   mimes = newMimetypes()
   homeDir = getHomeDir()
 
@@ -14,12 +13,12 @@ proc ls*(dir: string): seq[FileEntry] =
   for (kind, path) in walkDir(cwd):
     var entryType = InvalidFileEntry
 
-    let 
+    let
       (_, name, ext)= path.splitFile()
 
     if name.startsWith("."):
       continue
-    elif kind == pcDir:
+    elif kind == pcDir or kind == pcLinkToDir:
       entryType = DirFileEntry
     else:
       let mime = mimes.getMimetype(ext)

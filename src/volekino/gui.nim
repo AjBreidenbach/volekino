@@ -2,8 +2,7 @@ import globals
 import json, strformat, uri
 import models
 import models/db_users
-import os, osproc
-import terminal
+import os, osproc, terminal
 const ui_launcher {.strdefine.}: string ="webview"
 when ui_launcher == "webview":
   import webview
@@ -40,7 +39,7 @@ proc launchWebview* =
       styledecho fgRed, "couldn't start open ui"
       return
 
-    let process = startProcess(ui_launcher, args=[destination], options={poEchoCmd, poStdErrToStdOut, poParentStreams})
+    let process = startProcess(launcher, args=[destination], options={poEchoCmd, poStdErrToStdOut, poParentStreams})
     echo "launcher exited with ", process.waitForExit()
 
 

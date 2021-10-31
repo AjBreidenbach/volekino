@@ -25,8 +25,6 @@ var
 var apacheArgs = @["-d", USER_DATA_DIR, "-f", "httpd.conf"]
 
 when defined(termux):
-  import strformat
-  apacheEnv["PATH"] = &"{getEnv(\"PATH\")}:{getEnv(\"PREFIX\")}/local/apache2/bin"
   apacheArgs.add ["-D", "StaticModules"]
 
 proc apacheCtlStop: Process =

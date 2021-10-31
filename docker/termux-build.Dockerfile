@@ -21,18 +21,11 @@ run rm *.tar.gz
 workdir /data/data/com.termux/files/home/httpd-2.4.51
 env CFLAGS="-O2"
 
-run ./configure \
+run ./configure --prefix=$PREFIX/../opt/volekino \
 --with-included-apr \
 --with-mpm=event \
---enable-modules=none \
---with-static-dir \
---with-static-headers \
---with-static-authz_core \
---with-static-access_compat \
---with-static-mime \
---with-static-proxy \
---with-static-proxy_http \
---with-static-proxy_wstunnel
+--enable-mods-shared=none \
+--enable-mods-static='dir headers authz_core access_compat mime proxy proxy_http proxy_wstunnel watchdog log_config logio version unixd slotmem_shm'
 
 run make
 run make install
