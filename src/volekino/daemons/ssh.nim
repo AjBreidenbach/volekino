@@ -19,7 +19,7 @@ proc sshControlLoop(ssh: Process, password: string){.async.} =
       discard output.readLine(line)
 ]#
       
-proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
+proc startSshTunnel*(conf: VoleKinoConfig, retry=3): Process =
   let
     sshCommand = findExe("ssh")
     command = findExe("setsid")
@@ -49,60 +49,42 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=true): Process =
     )
 
     let output = result.outputStream
-    var line: string
-    while true:
-      if not atEnd(output):
-        discard output.readLine(line)
-        #echo "[ssh:] ", line
-        log.writeLine(line)
-        if line.contains("Permission denied"):
-          echo "password incorrect? ", password
-          return
-        if line.contains("remote forward success"):
-          echo "forward successful"
-          break
-        elif line.contains("remote forward failure"):
-          echo "failed to forward"
-          result.terminate()
-          discard result.waitForExit()
-          if retry:
-            sleep 5000
-            echo "trying again"
-            return conf.startSshTunnel(false)
-      else:
-        sleep 10
+    var 
+      line: string
+      success = false
+    while result.running:
+      #if not atEnd(output):
+      discard output.readLine(line)
+      #echo "[ssh:] ", line
+      log.writeLine(line)
+      if line.contains("Permission denied"):
+        echo "password incorrect? ", password
+        return
+      if line.contains("remote forward success"):
+        echo "forward successful"
+        success = true
+        break
+      elif line.contains("remote forward failure"):
+        echo "failed to remote forward"
+        result.terminate()
+        discard result.waitForExit()
+        #if retry > 0:
+        #  sleep 1000
+        #  echo "trying again"
+        #  return conf.startSshTunnel(retry - 1)
+      #else:
+    if not success:
+      sleep 1000
+      echo "retrying remote forward"
+      return conf.startSshTunnel(retry - 1)
+
+    #echo "exit code: ", result.peekExitCode
+    #log.writeLine "exit code: " &  $result.peekExitCode
+
+      #  sleep 10
 
     
 
-
-    #[
-    let process = result
-    proc logOutput {.async, gcsafe.} =
-      echo "logOutput"
-      echo "atEnd? ", atEnd(output)
-      while process.running:
-        if atEnd(output):
-          await sleepAsync 1000
-        else:
-          styledecho fgBlue, output.readLine
-      echo "process not running but not exited?"
-      
-    ]#
-    addProcess(
-      result.processId,
-      proc (fd: AsyncFd): bool {.gcsafe.} =
-        styledecho fgRed, "ssh exited"
-    )
-    while result.running:
-      if atEnd(output):
-        sleep 100
-      else:
-        styledecho fgBlue, output.readLine
-
-    #[
-    callSoon do:
-      asyncCheck logOutput()
-    ]#
 
 when isMainModule:
   import ../models
