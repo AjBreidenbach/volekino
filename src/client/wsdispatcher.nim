@@ -30,7 +30,7 @@ var ws = newWebSocket(
   (
     if location.protocol.to(cstring) == "http:": "ws://" 
     else: "wss://"
-  ) & location.host.to(cstring) & cstring"/" & wsPrefix("")
+  ) & location.host.to(cstring) & wsPrefix("")
   )
 
 proc sendEvent*[T](eventName: cstring, detail: T) =

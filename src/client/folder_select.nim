@@ -5,7 +5,14 @@ import asyncjs, sequtils
 import wsdispatcher
 
 
-proc joinWithSlash(s1, s2: cstring): cstring =
+proc encodePath(p: cstring): cstring =
+  p.replace(newRegExp(cstring"/", cstring"g"), cstring"$")
+
+proc joinWithSlash(s1, s2a: cstring): cstring =
+  var s2 = s2a
+  if s2a.startsWith(cstring"$"):
+    s2 = s2a.slice(1)
+
   if s1.endsWith(cstring"/") and s2.startsWith(cstring"/"):
     s1.slice(0, -1) & s2
   elif s1.endsWith(cstring"/") or s2.startsWith(cstring"/"):
@@ -48,7 +55,7 @@ proc sort(state: var SelectionWindowState) =
 proc setCurrentDirectory(state: var SelectionWindowState, dir: cstring, background=false) {.async.} =
   state.currentDirectory = dir
   state.fileSelection = cstring""
-  state.directoryContents = (await mrequest(apiPrefix("files/" & encodeUriComponent(dir)), background=background)).to(seq[FileEntry])
+  state.directoryContents = (await mrequest(apiPrefix(joinWithSlash(cstring"files", encodePath(dir))), background=background)).to(seq[FileEntry])
   state.sort()
 
 var SelectionWindow = MComponent()
@@ -235,7 +242,7 @@ FolderSelectForm.view = viewFn(FolderSelectFormState):
     state.selectWindowStatus = true
 
   let confirm = eventHandler:
-    discard mrequest(apiPrefix(joinWithSlash("files", encodeUriComponent(state.currentSelection))), Post, background=true)
+    discard mrequest(apiPrefix(joinWithSlash("files", encodePath(state.currentSelection))), Post, background=true)
     state.currentSelection = cstring""
     state.feedback = cstring"Selection added"
 

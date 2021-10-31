@@ -39,7 +39,7 @@ proc getDownloads(ctx: SessionContext) {.async.} =
   resp jsonResponse(% downloads)
 
 proc getLog(ctx: SessionContext) {.async, gcsafe.} =
-  let 
+  let
     logname = ctx.getPathParams("logname", "volekino")
     filename = case logname:
     of "apache": "error_log"
@@ -52,12 +52,13 @@ proc getLog(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(%* {"contents": contents})
       
 proc getSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
-  let requestedPath = decodeUrl(ctx.getPathParams("path", ""))
+  let requestedPath = decodeUrl(ctx.getPathParams("path", "")).replace('$', '/')
+
   resp jsonResponse(% file_navigation.ls(requestedPath))
 
 
 proc postSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
-  let requestedPath = decodeUrl(ctx.getPathParams("path", ""))
+  let requestedPath = decodeUrl(ctx.getPathParams("path", "")).replace('$', '/')
   try:
     symlinkMedia(requestedPath)
     resp jsonResponse(%* {"error": nil})
