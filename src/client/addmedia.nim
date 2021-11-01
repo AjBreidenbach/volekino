@@ -55,23 +55,24 @@ DownloadProgressPopupView.view = viewFn:
     popupEnabled = false
     return mchildren()
   
-  popupEnabled = true
+  popupEnabled = popupEnabledDefault()
   mdiv(
-    a {class: if shouldHidePopup(): "downloads-popup collapsed" else: "downloads-popup"},
+    a {class: if popupEnabled: "downloads-popup" else: "downloads-popup collapsed"},
     mdiv(
       a {style: "position: absolute; left: 0; width: 100%; top: 0; background-color: #8ed9ea; height: 1.75em; font-weight: bold; text-align: left; display: flex; align-items: center; padding: 0 0.5em; box-sizing: border-box;"},
       block:
-        if shouldHidePopup():
-          mimg(a {src: staticResource"/images/chevron.svg", style: "width: 2em; position: absolute; left: 0;", onclick: popupShowHandler})
-        else:
+        if popupEnabled:
           mchildren(
             mimg(a {src: staticResource"/images/minus.svg", style:"width: 2em; right: 0; position: absolute", onclick: popupMinimizeHandler}),
             "Downloads"
           )
+        else:
+          mimg(a {src: staticResource"/images/chevron.svg", style: "width: 2em; position: absolute; left: 0;", onclick: popupShowHandler})
+          
     ),
 
-    if shouldHidePopup(): mchildren()
-    else: DownloadProgressDefaultView
+    if popupEnabled: m(DownloadProgressDefaultView)
+    else: mchildren()
   )
 
 DownloadProgressDefaultView.view = viewFn:

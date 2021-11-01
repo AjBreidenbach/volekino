@@ -1,15 +1,18 @@
 import jsffi
 
 
-var popupEnabled* = false
-var `$shouldHidePopup` = localStorage[cstring"shouldHidePopup"] == cstring"1"
+#var `$shouldHidePopup` = localStorage[cstring"shouldHidePopup"] == cstring"1"
+proc popupEnabledDefault*: bool = localStorage[cstring"shouldHidePopup"] == cstring"0"
+var popupEnabled* = popupEnabledDefault()
 
-proc shouldHidePopup*: bool = `$shouldHidePopup`
+#proc shouldHidePopup*: bool = `$shouldHidePopup`
 proc hidePopup* =
-  `$shouldHidePopup` = true
+  #`$shouldHidePopup` = true
+  popupEnabled = false
   localStorage[cstring"shouldHidePopup"] = cstring"1"
 proc showPopup* =
-  `$shouldHidePopup` = false
+  #`$shouldHidePopup` = false
+  popupEnabled = true
   localStorage[cstring"shouldHidePopup"] = cstring"0"
 
 
