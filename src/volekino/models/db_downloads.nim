@@ -16,10 +16,11 @@ type DownloadDb* = object
   jdb: JobsDb
 
 converter toJobsDb(ddb: DownloadDb): JobsDb = ddb.jdb
+
+
 proc createTable*(db: DbConn): DownloadDb =
   db.exec(sql SQL_STATEMENTS["create"])
-  DownloadDb(db: db, jdb: db_jobs.createTable(db))
-
+  result = DownloadDb(db: db, jdb: db_jobs.createTable(db))
 
 proc getDownloads*(ddb: DownloadDb): seq[Download] =
   let completedMaxAge = initDuration(hours=1)
@@ -78,7 +79,7 @@ proc createDownload*(ddb: DownloadDb, url: string): Future[int] {.async.} =
   result = -1
   #echo uri.scheme
   if uri.scheme in ["http", "https"]:
-    let 
+    let
       client = newAsyncHttpClient()
       dl = await client.get(url)
       contentType = dl.headers.getOrDefault("content-type")
@@ -88,7 +89,7 @@ proc createDownload*(ddb: DownloadDb, url: string): Future[int] {.async.} =
       filename = if indices[0] != -1:
         contentDisposition[indices[0] + 10..indices[1] - 1]
       else:
-        let 
+        let
           extension = contentType.split('/')[1]
           pathTail = uri.path[uri.path.rfind('/')+1..^1]
 
@@ -99,7 +100,7 @@ proc createDownload*(ddb: DownloadDb, url: string): Future[int] {.async.} =
     if contentType != "":
       echo contentType
       if contentType.startsWith("video/"):
-        let 
+        let
           handle = openAsync(mediaDir / filename, fmWrite)
           jobId = ddb.addDownload(resourceName=filename, resourceType=DownloadResource.Default, url=url)
 
@@ -139,7 +140,20 @@ proc createDownload*(ddb: DownloadDb, url: string): Future[int] {.async.} =
   else:
     echo "nope"
     
+proc resumeDownloads*(ddb: DownloadDb) {.gcsafe.} =
+  for dl in ddb.getDownloads():
+    if dl.status != "complete":
+      ddb.updateJob(dl.id, dl.progress, "inactive")
+      echo "resuming download ", dl.resourceName
+      #discard ddb.addDownload(dl.resourceName, dl.resourceType, dl.url)
+      asyncCheck ddb.createDownload(dl.url)
 
+
+
+proc removeTorrent*(ddb: DownloadDb, id: int) {.async.} =
+  await transmission.removeTorrentAndData(id)
+  ddb.db.exec(sql SQL_STATEMENTS["remove-torrent"], id)
+  
 
 when isMainModule:
   # this is now untestable

@@ -1,5 +1,6 @@
 import os, strformat, strutils, asyncdispatch
 import ../globals, ../mimes
+import ../models/db_downloads
 import ../../common/library_types
 import tables
 import transmission_remote
@@ -44,12 +45,13 @@ proc iteratorIncludesMedia(s: iterator: string, m: string): bool =
   for sn in s():
     if sn == m: return true
 
-proc removeSharedMedia*(m: string) {.async.} =
+proc removeSharedMedia*(downloadsDb: DownloadDb, m: string) =
   if iteratorIncludesMedia(localIterator(), m):
     removeSharedLocal(m)
   elif m in torrentIds:
     let id = torrentIds[m]
-    await transmission.removeTorrentAndData(id)
+    #await transmission.removeTorrentAndData(id)
+    asyncCheck downloadsDb.removeTorrent(id)
   else:
     raise newException(CatchableError, &"Media ({m}) not found")
   runSync()

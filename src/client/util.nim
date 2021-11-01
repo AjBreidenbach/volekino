@@ -1,4 +1,5 @@
 import ./jsffi, ./globals
+import base64, strutils
 import mithril
 template handleErrorCodes*(body: untyped): untyped =
   try:
@@ -25,3 +26,6 @@ proc reload* {.async.} =
 proc logout* {.async.} =
   discard await mrequest(apiPrefix"/logout", Post)
   location.reload()
+
+proc encodePath*(p: cstring | string): cstring =
+  base64.encode($p, safe=true).replace('=','.')

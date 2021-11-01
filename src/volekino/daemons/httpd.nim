@@ -14,7 +14,10 @@ const EXE_NAMES = ["apachectl", "apache2ctl", "httpd", "apache2"]
 proc apacheCtlExecutable: string =
   for exeName in EXE_NAMES:
     result = findExe(exeName)
-    if result.len > 0: break
+    if result.len > 0:
+      break
+  if result.len == 0:
+    raise newException(CatchableError, "apache exe not found in path " & getEnv("PATH"))
 
 
 const apache_modules_dir {.strdefine.}: string = "/usr/lib/apache2/modules/"

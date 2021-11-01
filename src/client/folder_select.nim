@@ -1,18 +1,14 @@
 import mithril, mithril/common_selectors
 import ../common/library_types
-import ./globals, ./jsffi
+import ./globals, ./jsffi, ./util
 import asyncjs, sequtils
 import wsdispatcher
 
 
-proc encodePath(p: cstring): cstring =
-  p.replace(newRegExp(cstring"/", cstring"g"), cstring"$")
+  
+  #p.replace(newRegExp(cstring"/", cstring"g"), cstring"$")
 
-proc joinWithSlash(s1, s2a: cstring): cstring =
-  var s2 = s2a
-  if s2a.startsWith(cstring"$"):
-    s2 = s2a.slice(1)
-
+proc joinWithSlash(s1, s2: cstring): cstring =
   if s1.endsWith(cstring"/") and s2.startsWith(cstring"/"):
     s1.slice(0, -1) & s2
   elif s1.endsWith(cstring"/") or s2.startsWith(cstring"/"):

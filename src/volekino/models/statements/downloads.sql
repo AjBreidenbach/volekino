@@ -11,4 +11,7 @@ create table if not exists Downloads (
 replace into Downloads (jobId, resourceName, resourceType, torrentHandle, url) values (?,?,?,?,?)
 
 #get-all
-select jobId, resourceName, resourceType, url, progress, status from Downloads inner join Jobs on jobId = id where status != "complete" or ts > ?
+select jobId, resourceName, resourceType, url, progress, status from Downloads inner join Jobs on jobId = id where status != "complete" and status != "inactive" or ts > ?
+
+#remove-torrent
+update Downloads set jobId = -1 where torrentHandle = ?

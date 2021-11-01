@@ -1,5 +1,5 @@
 import mithril, mithril/common_selectors, ./jsffi
-import progress, store, ./globals, ./folder_select
+import progress, store, ./globals, ./folder_select, ./util
 import ../common/library_types
 import strformat, sequtils
 import wsdispatcher
@@ -134,7 +134,7 @@ proc populate(state: var AddedMediaListState) {.async.} =
     a.kind - b.kind
 
 proc remove(state: var AddedMediaListState, media: cstring) {.async.} =
-  discard (await mrequest(apiPrefix("shared-media/" & encodeUriComponent(media)), Delete, background=true))
+  discard (await mrequest(apiPrefix("shared-media/" & encodePath(media)), Delete, background=true))
   await state.populate()
 
   

@@ -60,10 +60,10 @@ proc invokeSelf*(useParentStreams=true, args: varargs[string]): Process =
     discard
   else:
     env["VOLEKINO_DAEMON"] = ""
-    let VOLEKINO_OPT = when defined(termux):
-      getEnv("PREFIX") / ".." / "opt" / "volekino" / "bin"
-    else: "/" / "opt" / "volekino" / "bin"
-    env["PATH"] = VOLEKINO_OPT & ':' & getEnv("PATH")
+    #let VOLEKINO_OPT = when defined(termux):
+    #  getEnv("PREFIX") / ".." / "opt" / "volekino" / "bin"
+    #else: "/" / "opt" / "volekino" / "bin"
+    #env["PATH"] = VOLEKINO_OPT & ':' & getEnv("PATH")
 
   startProcess(command, args=args, options=options, env=env)
 
@@ -120,3 +120,5 @@ proc runSync* =
 
 proc initTransmissionRemote* =
   transmission = newTransmissionRemote(port=9092)
+
+

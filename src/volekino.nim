@@ -1,5 +1,5 @@
 import volekino/globals
-import asyncdispatch, asyncfile, os, db_sqlite, sqlite3, strutils, json, osproc, uri
+import asyncdispatch, asyncfile, os, db_sqlite, sqlite3, strutils, json, osproc, uri, base64
 import prologue except newSettings, newApp
 import prologue/websocket
 #import mimetypes
@@ -18,6 +18,9 @@ var conf: VoleKinoConfig
 type SessionContext = ref object of Context
   sessionState: SessionState
 
+
+proc decodePath*(p: string): string =
+  base64.decode(p.replace('.', '='))
 
 proc userGetSelf(ctx: SessionContext) {.async, gcsafe.} =
   let user = usersDb.getUser(ctx.sessionState)
@@ -52,13 +55,13 @@ proc getLog(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(%* {"contents": contents})
       
 proc getSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
-  let requestedPath = decodeUrl(ctx.getPathParams("path", "")).replace('$', '/')
+  let requestedPath = decodePath(ctx.getPathParams("path", ""))
 
   resp jsonResponse(% file_navigation.ls(requestedPath))
 
 
 proc postSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
-  let requestedPath = decodeUrl(ctx.getPathParams("path", "")).replace('$', '/')
+  let requestedPath = decodePath(ctx.getPathParams("path", ""))
   try:
     symlinkMedia(requestedPath)
     resp jsonResponse(%* {"error": nil})
@@ -70,9 +73,9 @@ proc getSharedMedia(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(% (await library.getSharedMedia()))
 
 proc deleteSharedMedia(ctx: SessionContext) {.async, gcsafe.} =
-  let requestedMedia = decodeUrl(ctx.getPathParams("media", ""))
+  let requestedMedia = decodePath(ctx.getPathParams("media", ""))
   try:
-    await library.removeSharedMedia(requestedMedia)
+    library.removeSharedMedia(downloadsDb, requestedMedia)
     resp jsonResponse(%* {"error": nil})
   except:
     resp jsonResponse(%* {"error": getCurrentExceptionMsg()}, Http500)
@@ -109,7 +112,7 @@ proc postDownloads(ctx: SessionContext) {.async, gcsafe.} =
       
     
     resp jsonResponse(%* {"jobId": jobId})
-  except: resp jsonResponse(%* {"error": "could not parse settings change request"}, Http400)
+  except: resp jsonResponse(%* {"error": "could not create download"}, Http400)
 
 
 proc getSettings(ctx: SessionContext) {.async, gcsafe.} =
@@ -374,19 +377,25 @@ proc main(
     echo USER_DATA_DIR
     quit 0
       
-    
-  #let restarted = false
 
 
 
-  #let daemonStatus = daemonize(pidfile=VOLEKINO_PID):
-  #echo "daemon status ", daemonStatus
   if populateUserData:
+    #echo "populateUserData"
     try:
       userdata.populateFromZip()
       createDir(LOG_DIR)
+
+      createDir(USER_DATA_DIR / "conf")
+
+      # apache doesn't work on termux without this
+      createSymLink(USER_DATA_DIR / "mime.types", USER_DATA_DIR / "conf" / "mime.types")
+
     except:
+      # this is expected to fail after the first run
       discard
+      #styledecho fgRed, getCurrentExceptionMsg()
+      
 
 
   if syncOnly:
@@ -413,18 +422,17 @@ proc main(
   elif guiOnly:
     try:
       discard initDb(USER_DATA_DIR, dbs={0})
-      launchWebview()
     except:
       styledecho fgRed, "couldn't open db to create session ", getCurrentExceptionMsg()
+    launchWebview()
     return
   elif tunnelOnly:
     try:
       discard initDb(USER_DATA_DIR, dbs={0})
       conf = loadConfig(appSettings)
-      discard conf.startSshTunnel()
     except:
       styledecho fgRed, "couldn't open db to create tunnel? ", getCurrentExceptionMsg()
-      styledecho fgRed, getCurrentExceptionMsg()
+    discard conf.startSshTunnel()
     return
   if existsEnv("VOLEKINO_DAEMON"):
     discard initDb(USER_DATA_DIR)
@@ -441,6 +449,11 @@ proc main(
 
     return
   else:
+    let VOLEKINO_OPT = when defined(termux):
+      getEnv("PREFIX") / ".." / "opt" / "volekino" / "bin"
+    else: "/" / "opt" / "volekino" / "bin"
+    putEnv "PATH", VOLEKINO_OPT & ':' & getEnv("PATH")
+
     clearDaemonStatus()
     var params = commandLineParams()
     params.add "--populateUserData=off"
@@ -513,6 +526,10 @@ proc main(
     transmissionShutdownHandler = proc {.gcsafe.} =
       shutdownTransmissionD(transmissionProcess)
     shutdownHandlers.add(transmissionShutdownHandler)
+
+    let restartDownloads = sleepAsync(2000)
+    restartDownloads.addCallback do:
+      downloadsDb.resumeDownloads()
 
   let prologueSettings = prologue.newSettings(port = conf.port)
 

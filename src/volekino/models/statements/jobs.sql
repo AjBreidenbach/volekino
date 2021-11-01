@@ -4,7 +4,7 @@ create table if not exists Jobs(
   progress integer,
   status varchar(32),
   ts integer(4) not null default (strftime('%s','now')),
-  error text
+  data text
 )
 
 #create-job
@@ -15,10 +15,10 @@ update Jobs
 set progress = ?, status = ?
 where id = ?
 
-#error
+#data
 update Jobs
-set progress = -1, status = ?, error = ?
+set progress = -1, status = ?, data = ?
 where id = ?
 
 #job-status
-select status, progress, error from Jobs where id = ?
+select status, progress, data from Jobs where id = ?
