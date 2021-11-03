@@ -45,6 +45,7 @@ task buildFrontend, "build client side code":
     exec "node scripts" / "render-client.js"
 
 task buildBackend, "build server code":
+  exec "rm userdata.out && true"
   exec "nim c -r userdata"
   #[
   if "-d:release" in commandLineParams():
