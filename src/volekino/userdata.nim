@@ -31,11 +31,28 @@ else:
       echo "failed to extract"
       discard
       
-    try:
-      createDir(USER_DATA_DIR / "..")
-      moveDir(tmpDir / "userdata" / "userdata", USER_DATA_DIR)
-    except:
-      discard
+    #createDir(USER_DATA_DIR / "..")
+    #moveDir(tmpDir / "userdata" / "userdata", USER_DATA_DIR)
+    createDir(USER_DATA_DIR)
+    for file in walkPattern(tmpDir / "userdata" / "userdata" / "*"):
+      let 
+        (_, name, ext) = splitFile(file)
+        basename = name & ext
+      try:
+        moveFile(
+          file,
+          USER_DATA_DIR / basename
+        )
+        
+      except:
+        discard
+        try:
+          moveDir(
+            file,
+            USER_DATA_DIR / name
+          )
+        except:
+          discard
       #echo "error moving userdata ", getCurrentExceptionMsg()
 
-    removeDir(tmpDir / "userdata")
+    #removeDir(tmpDir / "userdata")

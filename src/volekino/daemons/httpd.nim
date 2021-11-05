@@ -9,7 +9,8 @@ proc httpdExecutable: string =
     if result.len > 0: break
 ]#
 
-const EXE_NAMES = ["apachectl", "apache2ctl", "httpd", "apache2"]
+#const EXE_NAMES = ["apachectl", "apache2ctl", "httpd", "apache2"]
+const EXE_NAMES = ["httpd", "apache2"]
 
 proc apacheCtlExecutable: string =
   for exeName in EXE_NAMES:

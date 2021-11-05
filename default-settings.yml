@@ -1,15 +1,15 @@
 port:
-  default: 7001
+  default: "unsupported"#7001
   description: Port that the VoleKino controller listens on;  It is not a good idea to open this up to the internet.
-  selector: input[type="number"][placeholder="7001"]
+  selector: input[type="number"][placeholder="7001"][disabled]
   category: advanced
 local-proxy-pass:
-  default: true
-  description: Determines whether apache should forward requests to the controller;  If you are using a proxy server, it is better to turn this off.
-  selector: input[type="checkbox"]
+  default: "unsupported"
+  description: Determines whether apache should forward requests to the controller;  If you are running your own reverse proxy, such as nginx, it is better to turn this off.
+  selector: input[type="checkbox"][disabled]
   category: advanced
 proxy-server:
-  default: "" #volekino.abreidenbach.com
+  default: "" #bookvoc.com
   requiresRestart: true
   description: HTTPS enabled server used to provide a secure connection to your local VoleKino instance; This connection is made by opening an SSH tunnel between the proxy server and your local instance and routing the traffic through the tunnel.  End users will access your instance through a prefixed url in the format of `https://volekino.com/<your-instance-identifier>/*`
   selector: input[type="url"]

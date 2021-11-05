@@ -103,7 +103,7 @@ block:
       "/user-menu": wrapPage UserMenu,
       "/add": wrapPage AddMediaView,
       "/debug": wrapPage Debug,
-      "/logs": wrapPage LogView
+      "/info": wrapPage LogView
 
     }
   )

@@ -7,8 +7,10 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
+    "marked": "^4.0.0",
+    "node-html-parser": "^5.1.0",
     "pug": "^3.0.2",
     "sass": "^1.38.1",
     "terser": "^5.7.2",

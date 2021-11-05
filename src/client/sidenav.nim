@@ -56,8 +56,8 @@ SideNav.view = viewFn(MComponent):
 
 
   sidenavItems.add m(mrouteLink,
-      a {href: "/debug"},
-      mimg(a {src: staticResource"/images/settings.svg"})
+      a {href: "/info"},
+      mimg(a {src: staticResource"/images/info.svg"})
     )
 
   if isAdmin():

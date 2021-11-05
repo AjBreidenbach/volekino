@@ -3,6 +3,7 @@ import ./tab_select, ./globals, ./jsffi
 
 
 var LogView* = MComponent()
+proc mtrust(s:cstring): VNode {.importc: "m.trust".}
 
 type LogViewState = ref object
   currentTab: cstring
@@ -13,7 +14,7 @@ proc refresh(state: var LogViewState) {.async.}=
   state.logText = response.contents.to(cstring)
 
 LogView.oninit = lifecycleHook(LogViewState):
-  state.currentTab = cstring"volekino"
+  state.currentTab = cstring"software credits"
   discard state.refresh()
 
 LogView.view = viewFn(LogViewState):
@@ -22,12 +23,15 @@ LogView.view = viewFn(LogViewState):
     discard state.refresh()
 
   mdiv(
-    a {class: "spacer", style: "max-width: 1200px; margin: 1em auto"},
+    a {class: "spacer", style: "width: min(1200px, 100%); margin: 1em auto; overflow: auto"},
     mdiv(
       a {style:"position: sticky; top: 0; background-color: white;"},
-      m(TabSelect, a {callback: cb, selections: @[cstring"volekino", cstring"apache", cstring"transmission", cstring"ssh"]})),
+      m(TabSelect, a {callback: cb, selections: @[cstring"software credits", cstring"volekino", cstring"apache", cstring"transmission", cstring"ssh"]})),
     mdiv(
       a {class: "log"},
-      state.logText
+      if state.currentTab == cstring"software credits":
+        mtrust(state.logText)
+      else:
+        state.logText
     )
   )

@@ -1,6 +1,6 @@
 import regex, strutils
 
-const settingsRe = re"(?P<a>[a-z\-]+)\s*(\=|\:)?\s*(?P<b>[^\n;,]+)"
+const settingsRe = re"(?P<a>[a-z\-]+)\s*(\=|\:)?\s*(?P<b>[^\n;]+)"
 
 
 type ParsedSetting* = tuple[key, value: string]
@@ -31,9 +31,10 @@ iterator parseSettings*(input: string): ParsedSetting =
 
 when isMainModule:
   for (key, value) in parseSettings("""
-    port 7000, local-proxy-pass=false ;proxy-server: volekino.abreidenbach.com
+    port 7000; local-proxy-pass=false ;proxy-server: volekino.abreidenbach.com
     require-auth true
     proxy-server-token=andrew:abc123
+    subtitle-langs=eng,rus
   """):
     echo key, " :: ", value
     

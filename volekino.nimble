@@ -5,7 +5,7 @@ import os, sequtils, strutils
 version       = "0.1.0"
 author        = "Andrew Breidenbach"
 description   = "A new awesome nimble package"
-license       = "MIT"
+license       = "Apache-2.0"
 srcDir        = "src"
 bin           = @["volekino"]
 
@@ -13,7 +13,9 @@ switch("outdir", "dist")
 
 
 proc passFlags(command: string) =
-  let defineFlags = commandLineParams().filterIt(it.startsWith("-d:"))
+  var defineFlags = commandLineParams().filterIt(it.startsWith("-d:"))
+  if getEnv("VOLEKINO_BUILD").startsWith("prod"):
+    defineFlags.add("-d:release")
   exec command & " " & defineFlags.join(" ")
 
 iterator defines: string =
@@ -45,7 +47,7 @@ task buildFrontend, "build client side code":
     exec "node scripts" / "render-client.js"
 
 task buildBackend, "build server code":
-  exec "rm userdata.out && true"
+  exec "rm userdata.out || true"
   exec "nim c -r userdata"
   #[
   if "-d:release" in commandLineParams():
@@ -58,12 +60,16 @@ task buildBackend, "build server code":
   compileWithCommand("c", getPkgDir() / "src" / "volekino.nim")
 
 task buildAll, "":
+  passFlags("nimble buildFrontend")
+  passFlags("nimble buildBackend")
+  #[
   if "-d:release" in commandLineParams():
     exec "nimble -d:release buildFrontend"
     exec "nimble -d:release buildBackend"
   else:
     exec "nimble buildFrontend"
     exec "nimble buildBackend"
+  ]#
 
 
 task buildDebian, "":

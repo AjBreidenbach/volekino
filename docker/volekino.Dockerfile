@@ -19,20 +19,21 @@ copy scripts scripts/
 copy src src/
 copy userdata userdata/
 copy vendor vendor/
-arg PRODUCTION
-run nimble buildAll
+arg VOLEKINO_BUILD="development"
+run nimble buildAll -d:ui_launcher='false'
 
 from ubuntu as dev
 run useradd volekino
-run apt-get update --fix-missing
-run DEBIAN_FRONTEND="noninteractive" apt-get install apache2 ffmpeg transmission-daemon -y
+run apt-get update --fix-missing && DEBIAN_FRONTEND="noninteractive" apt-get install apache2 ffmpeg transmission-daemon openssh-client -y
 workdir /home/volekino
-run chown volekino:volekino /home/volekino
+run mkdir -p /home/volekino/.local/share/VoleKino
+run chown volekino:volekino /home/volekino/ /home/volekino/.local/share/VoleKino
 copy --from=build /root/dist/ ./dist
+env PROXY_SERVER=""
+env PROXY_SERVER_TOKEN=""
 env USER=volekino
-#copy test-resources/ /root/.local/share/VoleKino/media
 user volekino:volekino
 expose 7000/tcp
-run ./dist/volekino --api=false --sync=false --apache=false
-copy test-resources/ /home/volekino/.local/share/VoleKino/media
-cmd ["./dist/volekino"]
+#run ./dist/volekino -e --api=false --sync=false --apache=false
+#copy test-resources/ /home/volekino/.local/share/VoleKino/media
+cmd ./dist/volekino -e --settings < /dev/null

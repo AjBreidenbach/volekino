@@ -47,9 +47,12 @@ proc getLog(ctx: SessionContext) {.async, gcsafe.} =
     filename = case logname:
     of "apache": "error_log"
     of "transmission", "ssh": logname
+    of "software%20credits": "software_credits"
     else: "volekino"
-  var log = openAsync(LOG_DIR / filename, fmRead)
-  let contents = await readAll(log)
+  let contents = try:
+    var log = openAsync(LOG_DIR / filename, fmRead)
+    await readAll(log)
+  except: ""
 
   # workaround until added deserialize to mithril wrapper
   resp jsonResponse(%* {"contents": contents})
@@ -358,6 +361,11 @@ proc applyInputSettings =
   for (key, value) in parseSettings(inputBuffer):
     appSettings.setProperty(key, value)
 
+  if existsEnv("PROXY_SERVER"):
+    appSettings.setProperty("proxy-server", getEnv("PROXY_SERVER"))
+  if existsEnv("PROXY_SERVER_TOKEN"):
+    appSettings.setProperty("proxy-server-token", getEnv("PROXY_SERVER_TOKEN"))
+
 proc main(
   api=true,
   apache=true,
@@ -498,6 +506,8 @@ proc main(
       #except: discard
 
     echo "daemon exited with ", daemon.waitForExit()
+
+    return
 
 
   if shouldWriteIndex():
