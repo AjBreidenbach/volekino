@@ -1,4 +1,5 @@
 import zippy, zippy/ziparchives
+import uid
 import globals
 import os
 import tables
@@ -17,6 +18,7 @@ when isMainModule:
   archive.extractAll("/tmp/volekino")
 
 else:
+  let prefix = genUid()
   proc populateFromZip*() =
     createDir(tmpDir)
     let archive = ZipArchive()
@@ -26,16 +28,16 @@ else:
       echo key
     ]#
     try:
-      archive.extractAll(tmpDir / "userdata")
+      archive.extractAll(tmpDir / prefix)
     except:
-      echo "failed to extract"
+      #echo "failed to extract"
       discard
       
     #createDir(USER_DATA_DIR / "..")
     #moveDir(tmpDir / "userdata" / "userdata", USER_DATA_DIR)
     createDir(USER_DATA_DIR)
-    for file in walkPattern(tmpDir / "userdata" / "userdata" / "*"):
-      let 
+    for file in walkPattern(tmpDir / prefix / "userdata" / "*"):
+      let
         (_, name, ext) = splitFile(file)
         basename = name & ext
       try:
@@ -55,4 +57,7 @@ else:
           discard
       #echo "error moving userdata ", getCurrentExceptionMsg()
 
-    #removeDir(tmpDir / "userdata")
+    try:
+      removeDir(tmpDir / prefix / "userdata")
+      removeDir(tmpDir / prefix)
+    except: discard

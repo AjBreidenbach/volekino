@@ -457,6 +457,7 @@ proc main(
 
     return
   else:
+    styledecho fgGreen, "CTRL+C to exit VoleKino"
     let VOLEKINO_OPT = when defined(termux):
       getEnv("PREFIX") / ".." / "opt" / "volekino" / "bin"
     else: "/" / "opt" / "volekino" / "bin"

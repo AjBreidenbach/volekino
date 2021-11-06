@@ -138,7 +138,7 @@ proc newDirectory*: Directory =
         a {style: " font-size: 1.2em; margin: 5em 1em; "},
         mdiv("Your library is empty."),
         mdiv(
-          a {style: "display: flex;justify-content: center;align-items: center;margin-top: 1em;"},
+          a {style: "flex-wrap: wrap; display: flex;justify-content: center;align-items: center;margin-top: 1em;"},
           mspan("If you're an admin, go to "),
           mimg(a {src: staticResource"/images/add.svg", style: "background-color: #8ed9ea; width: 2em; margin: 0 0.5em;"}),
           mspan("to add a file, folder, or url."))

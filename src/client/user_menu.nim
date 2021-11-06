@@ -212,7 +212,7 @@ OTPUserGenerator.view = viewFn(OTPUserGeneratorState):
         a {type: "submit", value: "Create user", onclick: onclickCopy}
       )
     ),
-    mspan(a {style: if state.isError: "color: red;" else: ""}, state.statusMessage)
+    mspan(a {class: "selectable", style: if state.isError: "color: red;" else: ""}, state.statusMessage)
 
   )
 

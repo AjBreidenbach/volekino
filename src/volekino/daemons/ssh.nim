@@ -41,6 +41,8 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=3): Process =
       password = sp[1]
     except: discard
 
+    if username.len == 0 or password.len == 0: return
+
     result = startProcess(
       command,
       env=env,
@@ -73,7 +75,7 @@ proc startSshTunnel*(conf: VoleKinoConfig, retry=3): Process =
         #  echo "trying again"
         #  return conf.startSshTunnel(retry - 1)
       #else:
-    if not success:
+    if not success and retry > 0:
       sleep 1000
       echo "retrying remote forward"
       return conf.startSshTunnel(retry - 1)
