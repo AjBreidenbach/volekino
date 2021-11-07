@@ -2,7 +2,6 @@ import volekino/globals
 import asyncdispatch, asyncfile, os, db_sqlite, sqlite3, strutils, json, osproc, uri, base64
 import prologue except newSettings, newApp
 import prologue/websocket
-#import mimetypes
 import volekino/[userdata, models, config, library, ffmpeg, gui, parse_settings, pipe, file_navigation]
 import volekino/models/[db_appsettings, db_jobs, db_library, db_subtitles, db_users, db_downloads]
 import volekino/daemons/[httpd, transmissiond, ssh]
@@ -10,6 +9,7 @@ import json
 import common/library_types
 import common/user_types
 import options, times, terminal
+import httpclient
 import cligen
 
 
@@ -28,7 +28,6 @@ proc userGetSelf(ctx: SessionContext) {.async, gcsafe.} =
     resp jsonResponse(%* {"error": "user not found"}, Http404)
   else:
     resp jsonResponse(% user)
-  #resp jsonResponse(% ctx.sessionState.getUser())
 
 proc postUsers(ctx: SessionContext) {.async.} =
   try:
@@ -70,7 +69,6 @@ proc postSystemFiles(ctx: SessionContext) {.async, gcsafe.} =
     resp jsonResponse(%* {"error": nil})
   except OsError, RecursiveLibraryError:
     resp jsonResponse(%* {"error": getCurrentExceptionMsg()}, Http500)
-  #resp jsonResponse(%* {"error": nil})
   
 proc getSharedMedia(ctx: SessionContext) {.async, gcsafe.} =
   resp jsonResponse(% (await library.getSharedMedia()))
@@ -91,21 +89,6 @@ proc postShutdown(ctx: SessionContext) {.async, gcsafe.} =
   resp "OK"
   shutdown()
 
-
-#[
-proc runSync =
-  let command = getAppFilename()
-  echo "syncCommand = ", command
-#proc main(api=true, apache=true, transmission=false, sync=true, printDataDir=false, populateUserData=true) =
-  let syncProcess = startProcess(command, args=["--syncOnly=true"], options={poEchoCmd, poParentStreams, poDaemon})
-
-  addProcess(
-    syncProcess.processId,
-    proc(fd: AsyncFd): bool =
-      echo "sync process exited with ", $syncProcess.peekExitCode()
-      true
-  )
-]#
 
 proc postDownloads(ctx: SessionContext) {.async, gcsafe.} =
   try:
@@ -202,7 +185,6 @@ proc getConversionStatistics(ctx: SessionContext) {.gcsafe, async.} =
     resp jsonResponse(% conversionStatistics(libraryDb.getEntry(entryUid)))
   
   
-
 proc jobStatus(ctx: SessionContext) {.async.} =
   var jobId = -1
   
@@ -385,9 +367,6 @@ proc main(
     echo USER_DATA_DIR
     quit 0
       
-
-
-
   if populateUserData:
     #echo "populateUserData"
     try:
@@ -471,25 +450,53 @@ proc main(
     elif settings:
       applyInputSettings()
     let
-      daemon = invokeSelf(e, params)
+      daemon = invokeSelf(false, params)
 
-    if not e: asyncCheck asyncPipe(daemon, LOG_DIR / "volekino")
+    let cb = proc(line: string) =
+      if e:
+        echo line
+      else:
+        if "One time password" in line:
+          echo line
+          echo "run with 'volekino --gui' to launch a ui"
+        elif "Prologue is serving at http" in line:
+          var connectionTestFailures = 0
+          proc connectionTest {.gcsafe.} =
+            let client = newHttpClient()
+            try:
+              let res = client.head("http://localhost:7000/api/users")
+              if res.status != Http401:
+                inc connectionTestFailures
+              else: connectionTestFailures = 0
+            except:
+              echo getCurrentExceptionMsg()
+              inc connectionTestFailures
+
+            if connectionTestFailures == 0:
+              echo "VoleKino is listening on http://localhost:7000"
+          proc runConnectionTest(attempts = 3) =
+            if attempts == 0:
+              echo "Connection test failed; Perhaps ports 7000 and 7001 are in use"
+              if run <= 1:
+                restart()
+              else:
+                shutdown()
+            else:
+              let timeout = sleepAsync(2000)
+              timeout.addCallback do:
+                connectionTest()
+                if connectionTestFailures != 0:
+                  runConnectionTest(attempts - 1)
+          runConnectionTest()
+
+    asyncCheck asyncPipe(daemon, LOG_DIR / "volekino", cb=cb)
 
     writePID(daemon.processId)
     while daemon.running:
-      if e:
-        sleep 1000
-      else:
-        poll(1000)
+      poll(1000)
       case getDaemonStatus():
       of "restart":
         styledecho fgRed, "restart"
-        #addProcess(
-        #  daemon.processId,
-        #  proc (f: AsyncFd): bool {.closure, gcsafe.} =
-        #    dispatch(main)
-        #    true
-        #)
 
         daemon.terminate()
         echo "child exited with ", daemon.waitForExit()
@@ -502,9 +509,6 @@ proc main(
         clearPID()
         daemon.terminate()
         return
-        
-      #try: sleep 1000
-      #except: discard
 
     echo "daemon exited with ", daemon.waitForExit()
 

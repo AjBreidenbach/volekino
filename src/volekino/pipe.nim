@@ -1,6 +1,8 @@
 import asyncfile, osproc, asyncdispatch, selectors, epoll, posix
 
-proc pipeLoop(process: Process, input: AsyncFile, output: AsyncFile, buffer: pointer#[, selector: Selector]#) {.async.} =
+type PipeCb* = proc(line: string): void
+
+proc pipeLoop(process: Process, input: AsyncFile, output: AsyncFile, buffer: var string, cb: PipeCb = nil) {.async.} =
   const EPOLL_EVENTS = 8
 
   var 
@@ -21,22 +23,33 @@ proc pipeLoop(process: Process, input: AsyncFile, output: AsyncFile, buffer: poi
     while true:
       let epoll_wait_result = epoll_wait(epollfd, cast[ptr EpollEvent](addr epollEvents), 1, EPOLL_EVENTS)
       if epoll_wait_result == 0: break
-      let bytesRead = await input.readBuffer(buffer, 1024)
-      if bytesRead == 0: break
-      await output.writeBuffer(buffer, bytesRead)
+      # can't use a buffer here
+      var line = await input.readLine()
+      if not cb.isNil:
+        cb(line)
+      line.add('\n')
+      #echo "writing , " ,line
+      await output.write(line)
+      #echo "written?"
+
+      #let bytesRead = await input.readBuffer(buffer, 1024)
+      #if bytesRead == 0: break
+      #await output.writeBuffer(buffer, bytesRead)
 
     await sleepAsync 1000
 
-proc asyncPipe*(process: Process, dest: string, mode = fmAppend) {.async.} =
+proc asyncPipe*(process: Process, dest: string, mode = fmAppend, cb: PipeCb = nil) {.async.} =
   var 
-    buffer : array[1024, char]
+    #buffer : array[1024, char]
+    buffer: string
     #input: File
   let
     output = openAsync(dest, mode)
   #discard input.open(process.outputHandle, fmRead)
     input = newAsyncFile(process.outputHandle.AsyncFd)
 
-  await pipeLoop(process, input, output, addr buffer#[, selector]#)
+  #await pipeLoop(process, input, output, addr buffer#[, selector]#)
+  await pipeLoop(process, input, output, buffer, cb#[, selector]#)
   #var selector = newSelector[cint]()
   #try:
   #  selector.registerHandle(int process.outputHandle, {Event.Read}, cint process.outputHandle)
