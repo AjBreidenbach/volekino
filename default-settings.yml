@@ -11,7 +11,7 @@ local-proxy-pass:
 proxy-server:
   default: "" #bookvoc.com
   requiresRestart: true
-  description: HTTPS enabled server used to provide a secure connection to your local VoleKino instance; This connection is made by opening an SSH tunnel between the proxy server and your local instance and routing the traffic through the tunnel.  End users will access your instance through a prefixed url in the format of `https://volekino.com/<your-instance-identifier>/*`
+  description: HTTPS enabled server used to provide a secure connection to your local VoleKino instance; This connection is made by opening an SSH tunnel between the proxy server and your local instance and routing the traffic through the tunnel.  End users will access your instance through a prefixed url in the format of `https://volekino.com/v/<your-instance-identifier>/*`
   selector: input[type="url"]
 proxy-server-token:
   default: ""

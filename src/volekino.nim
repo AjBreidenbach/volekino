@@ -456,10 +456,12 @@ proc main(
       if e:
         echo line
       else:
-        if "One time password" in line:
+        if line.startsWith("forward successful"):
+          echo "Connected to proxy server"
+        elif (not gui) and line[0..<min(30, line.len)].contains("One time password"):
           echo line
           echo "run with 'volekino --gui' to launch a ui"
-        elif "Prologue is serving at http" in line:
+        elif line.startsWith("DEBUG Prologue is serving at"):
           var connectionTestFailures = 0
           proc connectionTest {.gcsafe.} =
             let client = newHttpClient()
